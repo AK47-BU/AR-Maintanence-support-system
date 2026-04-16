@@ -21,7 +21,7 @@ Bournemouth University, 2026
 npm install
 
 # 2. Create your environment file
-cp .env.example .env
+
 # Then edit .env — at minimum, set JWT_SECRET to a random string
 
 # 3. Start MongoDB (if running locally)

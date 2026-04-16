@@ -27,7 +27,7 @@ router.post('/register', registerValidation, async (req, res) => {
       email,
       password,
       name,
-      role: role || 'engineer',
+      role: 'viewer',
       depot: depot || 'Main Depot'
     });
 
