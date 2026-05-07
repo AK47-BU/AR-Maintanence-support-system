@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 require('dotenv').config();
 
 const connectDB = require('./config/db');
@@ -20,8 +21,8 @@ const PORT = process.env.PORT || 3000;
 // ─────────────────────────────────────────────────────────
 
 // Helmet — sets various HTTP security headers
-// (Content-Security-Policy, X-Content-Type-Options, etc.)
-app.use(helmet());
+// CSP disabled: A-Frame + AR.js require unsafe-eval for WebGL shader compilation (TRL-3 trade-off)
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 
 // CORS — restrict which origins can access the API
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
@@ -30,11 +31,18 @@ const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
 
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, Postman)
+    // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+    // Allow explicitly listed origins
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow requests from this server's own origin (AR frontend served by Express on the same port)
+    try {
+      const u = new URL(origin);
+      const originPort = u.port || (origin.startsWith('https') ? '443' : '80');
+      if (originPort === String(PORT)) return callback(null, true);
+      // Allow ngrok tunnels used for HTTPS dev/demo
+      if (u.hostname.endsWith('.ngrok-free.app') || u.hostname.endsWith('.ngrok-free.dev') || u.hostname.endsWith('.ngrok.io')) return callback(null, true);
+    } catch (_) {}
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -71,6 +79,9 @@ app.use(generalLimiter);
 // Body parsing
 app.use(express.json({ limit: '10mb' }));  // Allows AR screenshots in base64
 app.use(express.urlencoded({ extended: false }));
+
+// AR frontend — served as static files from /ar/
+app.use('/ar', express.static(path.join(__dirname, 'ar')));
 
 // ─────────────────────────────────────────────────────────
 // Routes

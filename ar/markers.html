@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR Markers — Reference</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0e1a; color: #e0e6f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      padding: 24px 20px; max-width: 600px; margin: 0 auto;
+    }
+    h1 { font-size: 20px; margin-bottom: 6px; }
+    .subtitle { color: #64748b; font-size: 13px; margin-bottom: 32px; }
+    .section-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #475569; margin-bottom: 12px;
+    }
+    .marker-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 32px;
+    }
+    .marker-card {
+      background: #111827; border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px; padding: 16px; text-align: center;
+    }
+    .marker-img {
+      width: 120px; height: 120px; margin: 0 auto 12px;
+      background: white; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .marker-img img { width: 100%; height: 100%; object-fit: contain; }
+    .marker-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .marker-loc  { font-size: 11px; color: #64748b; }
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 99px;
+      font-size: 11px; font-weight: 700; margin-bottom: 8px;
+    }
+    .badge-fault { background: rgba(249,115,22,0.15); color: #fdba74; }
+    .badge-tool  { background: rgba(34,197,94,0.15);  color: #86efac; }
+    .tip {
+      background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.15);
+      border-radius: 10px; padding: 14px 16px; font-size: 13px;
+      color: #94a3b8; line-height: 1.6; margin-bottom: 16px;
+    }
+    .tip strong { color: #e0e6f0; }
+    a { color: #00d4ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 20px; color: #64748b; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <a href="/ar/" class="back">← Back to hub</a>
+  <h1>AR Marker Reference</h1>
+  <p class="subtitle">Use these markers with the AR Maintenance System. Display on a screen or print and place at inspection locations.</p>
+
+  <div class="tip">
+    <strong>How to use:</strong> Open this page on a laptop or tablet. Open the scanner on your phone.
+    Point the phone camera at the marker on this screen. The AR overlay will appear on the phone.
+    Keep the marker flat, well-lit, and at least 15 cm wide for reliable detection.
+  </div>
+
+  <div class="section-title">Fault Scanner markers — use with fault-ar.html</div>
+
+  <div class="marker-grid">
+    <div class="marker-card">
+      <div class="marker-img">
+        <!-- Hiro is the standard AR.js test marker — easy to find online -->
+        <img src="https://raw.githack.com/AR-js-org/AR.js/master/data/images/hiro.png"
+             alt="Hiro marker" onerror="this.parentElement.innerHTML='<span style=\'color:#64748b;font-size:12px;padding:8px\'>Load from<br>AR.js repo</span>'">
+      </div>
+      <span class="badge badge-fault">Fault</span>
+      <div class="marker-name">Hiro Marker</div>
+      <div class="marker-loc">All fault locations</div>
+    </div>
+  </div>
+
+  <div class="tip" style="margin-bottom:24px;">
+    The fault scanner uses a <strong>single Hiro marker</strong>. When detected, you choose the specific
+    location from a dropdown in the app. This lets you demo multiple locations without printing multiple markers.
+  </div>
+
+  <div class="section-title">Tool check marker — use with tool-ar.html</div>
+
+  <div class="marker-grid">
+    <div class="marker-card">
+      <div class="marker-img">
+        <img src="https://raw.githack.com/AR-js-org/AR.js/master/data/images/kanji.png"
+             alt="Kanji marker" onerror="this.parentElement.innerHTML='<span style=\'color:#64748b;font-size:12px;padding:8px\'>Load from<br>AR.js repo</span>'">
+      </div>
+      <span class="badge badge-tool">Tool Check</span>
+      <div class="marker-name">Kanji Marker</div>
+      <div class="marker-loc">Tool tray / equipment bay</div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <strong>Printable versions:</strong> Search for "AR.js hiro marker" and "AR.js kanji marker" — the
+    standard images are freely available. Print at A5 or larger and place face-up on a flat surface.
+    For best results use matte paper (glossy causes reflection artefacts).
+  </div>
+
+  <div class="section-title" style="margin-top:8px;">Location → markerRef mapping</div>
+  <div class="tip">
+    These are the <code>markerRef</code> values stored in the database. They are linked to the
+    Hiro marker through the location dropdown in the app.
+    <br><br>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;">
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+        <th style="text-align:left;padding:6px 0;color:#475569;font-weight:600">Dropdown Label</th>
+        <th style="text-align:left;padding:6px 0;color:#475569;font-weight:600">markerRef</th>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+        <td style="padding:6px 0;color:#cbd5e1">Platform 1 — Track Side</td>
+        <td style="padding:6px 0;color:#64748b;font-family:monospace">marker-0</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+        <td style="padding:6px 0;color:#cbd5e1">Tunnel Section A</td>
+        <td style="padding:6px 0;color:#64748b;font-family:monospace">marker-1</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+        <td style="padding:6px 0;color:#cbd5e1">Engine Bay — Bay 3</td>
+        <td style="padding:6px 0;color:#64748b;font-family:monospace">marker-2</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+        <td style="padding:6px 0;color:#cbd5e1">Bus Exterior — Left Panel</td>
+        <td style="padding:6px 0;color:#64748b;font-family:monospace">marker-3</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+        <td style="padding:6px 0;color:#cbd5e1">Overhead Rail Structure B</td>
+        <td style="padding:6px 0;color:#64748b;font-family:monospace">marker-4</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;color:#cbd5e1">Station Entrance Concourse</td>
+        <td style="padding:6px 0;color:#64748b;font-family:monospace">marker-5</td>
+      </tr>
+    </table>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>AR Maintenance System</title>
+  <script src="/ar/js/api.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0e1a;
+      color: #e0e6f0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo-mark {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, #00d4ff, #0080ff);
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 800;
+      color: white;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 32px rgba(0, 212, 255, 0.25);
+    }
+
+    .logo h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #e0e6f0;
+      letter-spacing: -0.3px;
+    }
+
+    .logo p {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      background: #0a0e1a;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 10px;
+      color: #e0e6f0;
+      padding: 12px 14px;
+      font-size: 15px;
+      outline: none;
+      margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: #00d4ff; }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 10px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: #00d4ff; color: #0a0e1a; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-ghost {
+      background: rgba(255,255,255,0.06);
+      color: #94a3b8;
+      border: 1px solid rgba(255,255,255,0.08);
+      margin-top: 10px;
+    }
+
+    .error {
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.25);
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Hub */
+    .user-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .user-avatar {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #00d4ff20, #0080ff20);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: #00d4ff;
+      flex-shrink: 0;
+    }
+
+    .user-info strong {
+      display: block;
+      font-size: 15px;
+      color: #e0e6f0;
+    }
+
+    .user-info span {
+      font-size: 12px;
+      color: #64748b;
+      text-transform: capitalize;
+    }
+
+    .role-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-left: 6px;
+    }
+    .role-admin    { background: rgba(239,68,68,0.15);   color: #fca5a5; }
+    .role-engineer { background: rgba(0,212,255,0.12);   color: #67e8f9; }
+    .role-viewer   { background: rgba(100,116,139,0.15); color: #94a3b8; }
+
+    .nav-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .nav-card {
+      background: #0a0e1a;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 18px 14px;
+      text-decoration: none;
+      color: #e0e6f0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .nav-card:hover {
+      border-color: rgba(0,212,255,0.3);
+      background: rgba(0,212,255,0.04);
+    }
+
+    .nav-icon { font-size: 26px; }
+    .nav-label { font-size: 14px; font-weight: 600; }
+    .nav-desc  { font-size: 11px; color: #64748b; }
+
+    .nav-card.fault .nav-icon { color: #f97316; }
+    .nav-card.tool  .nav-icon { color: #22c55e; }
+
+    footer {
+      margin-top: 24px;
+      font-size: 11px;
+      color: #334155;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Login view -->
+  <div id="view-login">
+    <div class="logo">
+      <div class="logo-mark">AR</div>
+      <h1>Maintenance System</h1>
+      <p>Public Transport AR Platform</p>
+    </div>
+
+    <div class="card">
+      <form id="login-form">
+        <div id="login-error" class="error hidden"></div>
+
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="email"
+               placeholder="engineer@depot.co.uk" required>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password"
+               placeholder="Password" required>
+
+        <button type="submit" class="btn btn-primary" id="login-btn">Sign In</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Hub view (post-login) -->
+  <div id="view-hub" class="hidden">
+    <div class="logo" style="margin-bottom: 24px;">
+      <div class="logo-mark">AR</div>
+      <h1>Maintenance System</h1>
+      <p>Public Transport AR Platform</p>
+    </div>
+
+    <div class="card">
+      <div class="user-card">
+        <div class="user-avatar" id="hub-avatar">ENG</div>
+        <div class="user-info">
+          <strong id="hub-name">—</strong>
+          <span id="hub-role">—</span>
+        </div>
+      </div>
+
+      <div class="nav-grid">
+        <a href="/ar/fault-ar.html" class="nav-card fault">
+          <span class="nav-icon">⚠</span>
+          <span class="nav-label">Fault Scanner</span>
+          <span class="nav-desc">Detect &amp; report faults</span>
+        </a>
+        <a href="/ar/tool-ar.html" class="nav-card tool">
+          <span class="nav-icon">🔧</span>
+          <span class="nav-label">Tool Check</span>
+          <span class="nav-desc">Track maintenance tools</span>
+        </a>
+      </div>
+
+      <button class="btn btn-ghost" id="logout-btn">Sign Out</button>
+    </div>
+
+    <footer>Connected to AR Maintenance API</footer>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const loginBtn = document.getElementById('login-btn');
+
+    // If already logged in, go straight to hub
+    if (Auth.isLoggedIn()) showHub();
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginError.classList.add('hidden');
+      loginBtn.textContent = 'Signing in…';
+      loginBtn.disabled = true;
+
+      const data = await API.login(
+        document.getElementById('email').value.trim(),
+        document.getElementById('password').value
+      );
+
+      if (data.success) {
+        Auth.save(data.data.token, data.data.user);
+        showHub();
+      } else {
+        loginError.textContent = data.message || 'Login failed. Check your credentials.';
+        loginError.classList.remove('hidden');
+        loginBtn.textContent = 'Sign In';
+        loginBtn.disabled = false;
+      }
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      Auth.clear();
+      document.getElementById('view-hub').classList.add('hidden');
+      document.getElementById('view-login').classList.remove('hidden');
+      loginBtn.textContent = 'Sign In';
+      loginBtn.disabled = false;
+      document.getElementById('email').value = '';
+      document.getElementById('password').value = '';
+    });
+
+    function showHub() {
+      const user = Auth.getUser();
+      if (!user) return;
+
+      document.getElementById('view-login').classList.add('hidden');
+      document.getElementById('view-hub').classList.remove('hidden');
+
+      const initials = user.name
+        ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+        : 'U';
+
+      document.getElementById('hub-avatar').textContent = initials;
+      document.getElementById('hub-name').textContent = user.name || user.email;
+
+      const roleEl = document.getElementById('hub-role');
+      roleEl.innerHTML = `
+        <span class="role-badge role-${user.role}">${user.role}</span>
+        <span style="margin-left:4px;font-size:11px;color:#64748b">${user.depot || ''}</span>
+      `;
+    }
+  </script>
+</body>
+</html>

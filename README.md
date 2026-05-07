@@ -38,6 +38,8 @@ npm start      # without auto-reload (production)
 The server starts at **http://localhost:3000**.  
 Verify with: `GET http://localhost:3000/api/health`
 
+The AR frontend is served by the same Express server at **http://localhost:3000/ar/**.
+
 ### Test Accounts (after seeding)
 
 | Role     | Email                    | Password      |
@@ -45,6 +47,52 @@ Verify with: `GET http://localhost:3000/api/health`
 | Admin    | admin@busdepot.com       | Admin123!     |
 | Engineer | engineer@busdepot.com    | Engineer123!  |
 | Viewer   | viewer@busdepot.com      | Viewer123!    |
+
+---
+
+## AR Frontend
+
+The AR interface is a set of static HTML pages served by Express from the `/ar/` directory. No separate build step is required.
+
+| Page | URL | Description |
+|------|-----|-------------|
+| Hub / Login | `/ar/` | Login form and navigation hub |
+| Fault Scanner | `/ar/fault-ar.html` | AR fault detection using Hiro marker |
+| Tool Check | `/ar/tool-ar.html` | AR tool tracking using Kanji marker |
+| Marker Reference | `/ar/markers.html` | Printable/displayable AR markers |
+
+### AR Markers
+
+- **Fault Scanner** uses the **Hiro marker** (standard AR.js preset — a thick-bordered black-and-white geometric pattern)
+- **Tool Check** uses the **Kanji marker** (standard AR.js preset)
+
+Both marker images are available at `/ar/markers.html`. Display them on a screen or print at A5 or larger. The marker image must be the actual geometric pattern — not just text.
+
+---
+
+## Mobile / Phone Testing
+
+Camera access requires **HTTPS**. Use [ngrok](https://ngrok.com) to tunnel the local server over HTTPS.
+
+### Setup
+
+```bash
+# Terminal 1 — start the server
+npm run dev
+
+# Terminal 2 — start the HTTPS tunnel
+ngrok http 3000
+```
+
+ngrok will print a URL such as `https://xxxx.ngrok-free.dev`. Open `https://xxxx.ngrok-free.dev/ar/` on the phone.
+
+> **Note:** ngrok shows a browser warning on first visit — click "Visit Site" to continue.
+
+### Browser requirement
+
+**Chrome is required on Android.** Firefox does not reliably support the WebGL features AR.js depends on and will fail to detect markers.
+
+On iOS, use **Safari**.
 
 ---
 
@@ -158,6 +206,13 @@ curl -X POST http://localhost:3000/api/tools/checks \
 
 ```
 ar-maintenance-api/
+├── ar/
+│   ├── index.html         # Login form and navigation hub
+│   ├── fault-ar.html      # AR fault scanner (Hiro marker)
+│   ├── tool-ar.html       # AR tool check (Kanji marker)
+│   ├── markers.html       # AR marker reference page
+│   └── js/
+│       └── api.js         # Shared API client (Auth + fetch wrapper)
 ├── config/
 │   └── db.js              # MongoDB connection
 ├── middleware/

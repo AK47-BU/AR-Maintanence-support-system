@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AR Fault Scanner</title>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js"></script>
+  <script src="/ar/js/api.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { overflow: hidden; background: #000; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+    /* A-Frame fills the screen; UI sits on top */
+    #ui {
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+    #ui > * { pointer-events: auto; }
+
+    /* ── Top bar ──────────────────────────────── */
+    #topbar {
+      position: fixed; top: 0; left: 0; right: 0; height: 52px;
+      background: rgba(10, 14, 26, 0.88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 14px;
+      color: #e0e6f0; font-size: 14px; font-weight: 600;
+      z-index: 200;
+    }
+    .topbar-back {
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; color: #e0e6f0; font-size: 16px;
+      flex-shrink: 0;
+    }
+    .topbar-title { flex: 1; }
+    .topbar-user {
+      font-size: 11px; color: #64748b;
+      text-align: right; max-width: 120px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* ── Scan hint ───────────────────────────── */
+    #scan-hint {
+      position: fixed;
+      bottom: 48px; left: 50%; transform: translateX(-50%);
+      background: rgba(10,14,26,0.82);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #64748b; font-size: 13px;
+      padding: 8px 18px; border-radius: 20px;
+      pointer-events: none; white-space: nowrap;
+      transition: opacity 0.3s;
+    }
+
+    /* ── Scanning spinner ────────────────────── */
+    #loading-bar {
+      position: fixed; top: 52px; left: 0; right: 0; height: 2px;
+      background: rgba(0,212,255,0.15);
+      display: none;
+    }
+    #loading-fill {
+      height: 100%;
+      background: #00d4ff;
+      animation: slide 1s infinite;
+    }
+    @keyframes slide {
+      0%   { width: 0; margin-left: 0; }
+      50%  { width: 60%; margin-left: 20%; }
+      100% { width: 0; margin-left: 100%; }
+    }
+
+    /* ── Bottom panels ───────────────────────── */
+    .bottom-panel {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(10,14,26,0.96);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px 20px 0 0;
+      padding: 0 0 env(safe-area-inset-bottom, 16px) 0;
+      color: #e0e6f0;
+      transform: translateY(0);
+      transition: transform 0.32s cubic-bezier(.4,0,.2,1);
+      max-height: 56vh; overflow-y: auto;
+    }
+    .bottom-panel.hidden { transform: translateY(110%); }
+
+    .panel-drag {
+      width: 36px; height: 4px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+      margin: 10px auto 4px;
+    }
+
+    /* Severity stripe at top of panel */
+    .sev-stripe {
+      height: 3px; border-radius: 0;
+      margin: 0 0 14px;
+    }
+
+    .panel-body { padding: 0 18px 20px; }
+
+    .panel-title {
+      font-size: 17px; font-weight: 700;
+      margin-bottom: 10px; line-height: 1.3;
+    }
+
+    .meta-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; margin-bottom: 14px;
+    }
+    .meta-item { }
+    .meta-label {
+      font-size: 10px; font-weight: 700;
+      color: #475569; text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 2px;
+    }
+    .meta-value { font-size: 13px; color: #cbd5e1; }
+
+    .sev-badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px; border-radius: 99px;
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .sev-critical { background: rgba(239,68,68,0.18); color: #fca5a5; }
+    .sev-high     { background: rgba(249,115,22,0.18); color: #fdba74; }
+    .sev-medium   { background: rgba(234,179,8,0.18);  color: #fde047; }
+    .sev-low      { background: rgba(34,197,94,0.18);  color: #86efac; }
+
+    .annotations {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 10px; margin-top: 4px; margin-bottom: 14px;
+    }
+    .annotation-item {
+      font-size: 12px; color: #94a3b8;
+      padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+      line-height: 1.5;
+    }
+    .annotation-author { color: #475569; margin-right: 4px; }
+
+    .action-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .btn {
+      flex: 1; min-width: 90px;
+      padding: 11px 10px;
+      border-radius: 10px; border: none;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary  { background: #00d4ff; color: #0a0e1a; }
+    .btn-ghost    { background: rgba(255,255,255,0.07); color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); }
+    .btn-success  { background: rgba(34,197,94,0.15); color: #86efac; border: 1px solid rgba(34,197,94,0.2); }
+    .btn-danger   { background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Location selector (no-fault state) */
+    .loc-picker {
+      background: #0a0e1a;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 10px; color: #e0e6f0;
+      padding: 11px 12px; font-size: 14px;
+      width: 100%; outline: none;
+      margin-bottom: 14px;
+    }
+    .loc-picker:focus { border-color: #00d4ff; }
+
+    .no-fault-msg {
+      font-size: 14px; color: #64748b;
+      margin-bottom: 14px;
+    }
+
+    /* ── Modals ──────────────────────────────── */
+    .modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(6px);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 400; padding: 12px;
+    }
+    .modal.hidden { display: none; }
+
+    .modal-card {
+      background: #111827;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px; padding: 24px;
+      width: 100%; max-width: 480px;
+      color: #e0e6f0;
+      max-height: 82vh; overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 17px; font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 11px; font-weight: 700;
+      color: #475569; text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 5px;
+    }
+    .field-input {
+      width: 100%;
+      background: #0a0e1a;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 10px; color: #e0e6f0;
+      padding: 11px 12px; font-size: 14px;
+      outline: none; margin-bottom: 14px;
+      font-family: inherit;
+    }
+    .field-input:focus { border-color: #00d4ff; }
+
+    .modal-actions {
+      display: flex; gap: 8px; margin-top: 4px;
+    }
+    .modal-actions .btn { flex: 1; }
+
+    /* ── Inspection checklist ────────────────── */
+    .inspect-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .inspect-step-label { font-size: 12px; color: #64748b; }
+    .inspect-step-num   { font-size: 12px; color: #00d4ff; font-weight: 700; }
+
+    .progress-track {
+      height: 3px; background: rgba(255,255,255,0.08);
+      border-radius: 2px; margin-bottom: 18px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; background: #00d4ff;
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    .inspect-step-title {
+      font-size: 16px; font-weight: 700; margin-bottom: 14px;
+    }
+
+    .check-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      cursor: pointer;
+    }
+    .check-item:last-child { border-bottom: none; }
+
+    .check-item input[type="checkbox"] {
+      width: 20px; height: 20px; margin: 0; flex-shrink: 0;
+      accent-color: #00d4ff; cursor: pointer;
+      margin-top: 1px;
+    }
+    .check-item span { font-size: 13px; color: #cbd5e1; line-height: 1.5; }
+    .check-item.checked span { color: #475569; text-decoration: line-through; }
+
+    /* ── Toast ───────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 90px; left: 50%;
+      transform: translateX(-50%);
+      background: #1e2a3a; color: #e0e6f0;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px 18px; font-size: 13px;
+      z-index: 500; white-space: nowrap;
+      transition: opacity 0.3s;
+    }
+    #toast.hidden { opacity: 0; pointer-events: none; }
+    #toast.success { border-color: rgba(34,197,94,0.3); color: #86efac; }
+    #toast.error   { border-color: rgba(239,68,68,0.3);  color: #fca5a5; }
+  </style>
+</head>
+<body>
+
+  <!-- AR Scene -->
+  <a-scene
+    vr-mode-ui="enabled: false"
+    renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true;"
+    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+
+    <!-- Hiro marker — standard AR.js test marker, easy to print -->
+    <a-marker preset="hiro" id="fault-marker" smooth="true" smoothCount="10">
+      <a-entity id="ar-overlay" position="0 0.5 0">
+
+        <!-- Background panel (colour = severity) -->
+        <a-plane id="ar-panel"
+          color="#0ea5e9" width="1.7" height="0.95"
+          opacity="0.88" material="transparent: true; side: double">
+        </a-plane>
+
+        <!-- Animated pulse ring for critical faults -->
+        <a-circle id="ar-pulse"
+          radius="0.95" color="#ef4444" opacity="0" wireframe="true"
+          position="0 0 -0.01" rotation="-90 0 0">
+        </a-circle>
+
+        <a-text id="ar-sev"   value=""          color="#fff" align="center" position="0  0.30 0.01" width="1.6" font="roboto" negate="false"></a-text>
+        <a-text id="ar-title" value="SCANNING"  color="#e0e6f0" align="center" position="0  0.05 0.01" width="1.55" font="roboto" negate="false" scale="0.85 0.85 0.85"></a-text>
+        <a-text id="ar-loc"   value="Aim at the Hiro marker" color="#94a3b8" align="center" position="0 -0.25 0.01" width="1.45" font="roboto" negate="false" scale="0.65 0.65 0.65"></a-text>
+
+      </a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <!-- UI Layer -->
+  <div id="ui">
+
+    <!-- Top bar -->
+    <div id="topbar">
+      <a href="/ar/" class="topbar-back">←</a>
+      <span class="topbar-title">AR Fault Scanner</span>
+      <span class="topbar-user" id="topbar-user"></span>
+    </div>
+
+    <!-- Loading bar -->
+    <div id="loading-bar"><div id="loading-fill"></div></div>
+
+    <!-- Scan hint -->
+    <div id="scan-hint">Point camera at the Hiro marker</div>
+
+    <!-- ── Fault found panel ── -->
+    <div id="panel-fault" class="bottom-panel hidden">
+      <div class="panel-drag"></div>
+      <div id="fault-sev-stripe" class="sev-stripe"></div>
+      <div class="panel-body">
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span id="fault-sev-badge" class="sev-badge">—</span>
+          <span style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.05em;" id="fault-status-label">—</span>
+        </div>
+
+        <div class="panel-title" id="fault-title">—</div>
+
+        <div class="meta-grid">
+          <div class="meta-item">
+            <div class="meta-label">Location</div>
+            <div class="meta-value" id="fault-location">—</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Type</div>
+            <div class="meta-value" id="fault-type">—</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Reported by</div>
+            <div class="meta-value" id="fault-reporter">—</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Detected</div>
+            <div class="meta-value" id="fault-date">—</div>
+          </div>
+        </div>
+
+        <div id="fault-annotations" class="annotations" style="display:none"></div>
+
+        <div class="action-row">
+          <button class="btn btn-primary"  id="btn-inspect"  onclick="startInspection()">Inspect</button>
+          <button class="btn btn-ghost"    id="btn-annotate" onclick="openModal('modal-annotate')">Add Note</button>
+          <button class="btn btn-success"  id="btn-resolve"  onclick="resolveFault()">Resolve</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── No fault panel ── -->
+    <div id="panel-no-fault" class="bottom-panel hidden">
+      <div class="panel-drag"></div>
+      <div class="panel-body">
+        <div class="panel-title" style="margin-bottom:6px;">No fault recorded here</div>
+        <p class="no-fault-msg">Select the location you are scanning, then report a new fault or begin an inspection.</p>
+
+        <label class="field-label" style="margin-bottom:5px;">Current Location</label>
+        <select id="location-picker" class="loc-picker" onchange="onLocationChange()">
+          <option value="">— Select location —</option>
+        </select>
+
+        <div class="action-row" id="no-fault-actions" style="display:none">
+          <button class="btn btn-primary" onclick="openModal('modal-report')">Report Fault</button>
+          <button class="btn btn-ghost"   onclick="startInspectionNew()">Begin Inspection</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#ui -->
+
+  <!-- ── Modal: Report Fault ───────────────────────── -->
+  <div id="modal-report" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title">Report New Fault</div>
+      <form id="report-form" onsubmit="submitReport(event)">
+
+        <label class="field-label" for="r-title">Fault Title</label>
+        <input id="r-title" class="field-input" type="text"
+               placeholder="e.g. Stress crack on left panel" required maxlength="80">
+
+        <label class="field-label" for="r-type">Fault Type</label>
+        <select id="r-type" class="field-input">
+          <option value="structural">Structural</option>
+          <option value="electrical">Electrical</option>
+          <option value="mechanical">Mechanical</option>
+          <option value="wear">Wear</option>
+          <option value="safety">Safety</option>
+          <option value="other">Other</option>
+        </select>
+
+        <label class="field-label" for="r-severity">Severity</label>
+        <select id="r-severity" class="field-input">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high" selected>High</option>
+          <option value="critical">Critical</option>
+        </select>
+
+        <label class="field-label" for="r-desc">Description</label>
+        <textarea id="r-desc" class="field-input" rows="3"
+                  placeholder="Describe what you can see…"></textarea>
+
+        <div id="report-error" style="font-size:12px;color:#fca5a5;margin-bottom:10px;display:none"></div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('modal-report')">Cancel</button>
+          <button type="submit"  class="btn btn-primary" id="report-submit-btn">Submit Report</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Modal: Annotate ───────────────────────────── -->
+  <div id="modal-annotate" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-title">Add Note</div>
+
+      <label class="field-label" for="annot-text">Note</label>
+      <textarea id="annot-text" class="field-input" rows="4"
+                placeholder="Describe your observation or action taken…"></textarea>
+
+      <div id="annot-error" style="font-size:12px;color:#fca5a5;margin-bottom:10px;display:none"></div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost"   onclick="closeModal('modal-annotate')">Cancel</button>
+        <button class="btn btn-primary" id="annot-submit-btn" onclick="submitAnnotation()">Save Note</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Inspection Checklist ──────────────── -->
+  <div id="modal-inspect" class="modal hidden">
+    <div class="modal-card">
+
+      <div class="inspect-header">
+        <span class="inspect-step-label" id="inspect-step-label">Step 1 of 4</span>
+        <span class="inspect-step-num"   id="inspect-fault-ref"></span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="inspect-progress-fill" style="width:0%"></div>
+      </div>
+
+      <div class="inspect-step-title" id="inspect-step-title"></div>
+
+      <div id="inspect-items"></div>
+
+      <div class="modal-actions" style="margin-top:20px;">
+        <button class="btn btn-ghost"   id="btn-inspect-prev"    onclick="stepPrev()">← Back</button>
+        <button class="btn btn-primary" id="btn-inspect-next"    onclick="stepNext()">Next →</button>
+        <button class="btn btn-success" id="btn-inspect-confirm" onclick="inspectConfirm()" style="display:none">
+          Confirm Fault ✓
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="hidden"></div>
+
+  <script>
+    // ── Auth guard ──────────────────────────────────────────────
+    if (!Auth.isLoggedIn()) window.location.href = '/ar/';
+
+    // ── Constants ───────────────────────────────────────────────
+    const LOCATIONS = [
+      { area: 'Platform 1 — Track Side',    markerRef: 'marker-0', depot: 'Central Depot' },
+      { area: 'Tunnel Section A',            markerRef: 'marker-1', depot: 'Central Depot' },
+      { area: 'Engine Bay — Bay 3',          markerRef: 'marker-2', depot: 'Central Depot' },
+      { area: 'Bus Exterior — Left Panel',   markerRef: 'marker-3', depot: 'Central Depot' },
+      { area: 'Overhead Rail Structure B',   markerRef: 'marker-4', depot: 'Central Depot' },
+      { area: 'Station Entrance Concourse',  markerRef: 'marker-5', depot: 'Central Depot' },
+    ];
+
+    const SEV_COLOR = {
+      critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e'
+    };
+
+    const INSPECTION_STEPS = [
+      {
+        title: 'Visual Inspection',
+        items: [
+          'Visible cracks, fractures, or deformation present',
+          'Discolouration, staining, or heat damage noted',
+          'Adjacent infrastructure checked for secondary damage',
+        ]
+      },
+      {
+        title: 'Safety Assessment',
+        items: [
+          'Hazard zone cordoned off with warning tape or cones',
+          'Nearby passengers and staff diverted from area',
+          'PPE verified and worn correctly by all personnel',
+        ]
+      },
+      {
+        title: 'Documentation',
+        items: [
+          'Photographs taken from at least three angles',
+          'Location zone reference or GPS coordinates recorded',
+          'Fault timestamp and operator ID logged',
+        ]
+      },
+      {
+        title: 'Escalation',
+        items: [
+          'Shift supervisor informed of fault',
+          'Maintenance work order raised in system',
+          'Provisional repair priority assessed',
+        ]
+      }
+    ];
+
+    // ── State ────────────────────────────────────────────────────
+    let markerVisible   = false;
+    let currentFault    = null;
+    let currentLocation = null;   // LOCATIONS[i]
+    let inspectStep     = 0;
+    let inspectChecks   = [];     // bool[][] per step
+
+    // ── Init ─────────────────────────────────────────────────────
+    const user = Auth.getUser();
+    if (user) document.getElementById('topbar-user').textContent = user.name || user.email;
+
+    // Populate location picker
+    const picker = document.getElementById('location-picker');
+    LOCATIONS.forEach((loc, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = loc.area;
+      picker.appendChild(opt);
+    });
+
+    // AR marker events
+    document.querySelector('#fault-marker').addEventListener('markerFound', onMarkerFound);
+    document.querySelector('#fault-marker').addEventListener('markerLost',  onMarkerLost);
+
+    // ── Marker events ────────────────────────────────────────────
+    function onMarkerFound() {
+      markerVisible = true;
+      document.getElementById('scan-hint').style.opacity = '0';
+
+      // Default to first location on first detection
+      if (!currentLocation) {
+        showNoFaultPanel();
+      }
+    }
+
+    function onMarkerLost() {
+      markerVisible = false;
+      document.getElementById('scan-hint').style.opacity = '1';
+    }
+
+    // ── Location picker ──────────────────────────────────────────
+    async function onLocationChange() {
+      const idx = picker.value;
+      if (idx === '') {
+        document.getElementById('no-fault-actions').style.display = 'none';
+        return;
+      }
+      currentLocation = LOCATIONS[parseInt(idx)];
+      document.getElementById('no-fault-actions').style.display = 'none';
+      await loadFaultForLocation(currentLocation);
+    }
+
+    async function loadFaultForLocation(loc) {
+      setLoading(true);
+      const data = await API.getFaults({ markerRef: loc.markerRef, limit: 1 });
+      setLoading(false);
+
+      if (!data.success) { toast(data.message, 'error'); return; }
+
+      if (data.data.faults.length > 0) {
+        currentFault = data.data.faults[0];
+        showFaultPanel(currentFault, loc);
+      } else {
+        currentFault = null;
+        showNoFaultPanel(loc);
+      }
+    }
+
+    // ── Panel display ─────────────────────────────────────────────
+    function showFaultPanel(fault, loc) {
+      hide('panel-no-fault');
+      show('panel-fault');
+
+      const sev = fault.severity || 'low';
+      const color = SEV_COLOR[sev] || '#3b82f6';
+
+      // Severity stripe
+      document.getElementById('fault-sev-stripe').style.background = color;
+
+      // Badge
+      const badge = document.getElementById('fault-sev-badge');
+      badge.textContent = sev.toUpperCase();
+      badge.className = `sev-badge sev-${sev}`;
+
+      document.getElementById('fault-status-label').textContent = fault.status.replace('_', ' ');
+      document.getElementById('fault-title').textContent = fault.title;
+      document.getElementById('fault-location').textContent = fault.location?.area || (loc?.area || '—');
+      document.getElementById('fault-type').textContent = fault.type;
+      document.getElementById('fault-reporter').textContent = fault.detectedBy?.name || '—';
+      document.getElementById('fault-date').textContent = fault.createdAt
+        ? new Date(fault.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+        : '—';
+
+      // Annotations
+      const annBox = document.getElementById('fault-annotations');
+      if (fault.annotations?.length > 0) {
+        annBox.style.display = 'block';
+        annBox.innerHTML = fault.annotations.slice(-3).map(a => `
+          <div class="annotation-item">
+            <span class="annotation-author">${a.author?.name || 'Engineer'}:</span>${a.text}
+          </div>`).join('');
+      } else {
+        annBox.style.display = 'none';
+      }
+
+      // Show/hide action buttons based on role & status
+      const canWrite = Auth.canWrite();
+      document.getElementById('btn-inspect').style.display  = (canWrite && fault.status === 'detected') ? '' : 'none';
+      document.getElementById('btn-annotate').style.display = canWrite ? '' : 'none';
+      document.getElementById('btn-resolve').style.display  = (canWrite && fault.status !== 'resolved') ? '' : 'none';
+
+      // Update AR 3D overlay
+      updateAROverlay(fault);
+    }
+
+    function showNoFaultPanel(loc) {
+      hide('panel-fault');
+      show('panel-no-fault');
+      if (loc) {
+        // Pre-select picker value matching loc
+        const idx = LOCATIONS.findIndex(l => l.markerRef === loc.markerRef);
+        if (idx >= 0) picker.value = idx;
+        document.getElementById('no-fault-actions').style.display = 'flex';
+        currentLocation = loc;
+      }
+      resetAROverlay();
+    }
+
+    // ── AR overlay update ─────────────────────────────────────────
+    function updateAROverlay(fault) {
+      const color = SEV_COLOR[fault?.severity] || '#0ea5e9';
+      const panel = document.getElementById('ar-panel');
+      const sev   = document.getElementById('ar-sev');
+      const title = document.getElementById('ar-title');
+      const loc   = document.getElementById('ar-loc');
+      const pulse = document.getElementById('ar-pulse');
+
+      panel.setAttribute('color', color);
+      sev.setAttribute('value',   fault ? fault.severity.toUpperCase() + '  |  ' + fault.status.replace('_',' ') : '');
+      title.setAttribute('value', fault ? truncate(fault.title, 30) : 'SCANNING');
+      loc.setAttribute('value',   fault?.location?.area ? truncate(fault.location.area, 32) : 'Aim at the Hiro marker');
+
+      if (fault?.severity === 'critical') {
+        pulse.setAttribute('opacity', '0.6');
+        pulse.setAttribute('animation',
+          'property: opacity; from: 0.05; to: 0.6; dur: 700; loop: true; dir: alternate; easing: easeInOutSine');
+      } else {
+        pulse.setAttribute('opacity', '0');
+        pulse.removeAttribute('animation');
+      }
+    }
+
+    function resetAROverlay() {
+      document.getElementById('ar-panel').setAttribute('color', '#0ea5e9');
+      document.getElementById('ar-sev').setAttribute('value', '');
+      document.getElementById('ar-title').setAttribute('value', 'SCANNING');
+      document.getElementById('ar-loc').setAttribute('value', 'Aim at the Hiro marker');
+      document.getElementById('ar-pulse').setAttribute('opacity', '0');
+    }
+
+    // ── Actions ───────────────────────────────────────────────────
+    async function resolveFault() {
+      if (!currentFault || !confirm('Mark this fault as resolved?')) return;
+      const res = await API.updateFault(currentFault._id, { status: 'resolved' });
+      if (res.success) {
+        toast('Fault marked as resolved', 'success');
+        currentFault = res.data?.fault || { ...currentFault, status: 'resolved' };
+        showFaultPanel(currentFault, currentLocation);
+      } else {
+        toast(res.message, 'error');
+      }
+    }
+
+    async function submitReport(e) {
+      e.preventDefault();
+      const btn = document.getElementById('report-submit-btn');
+      const errEl = document.getElementById('report-error');
+      errEl.style.display = 'none';
+      btn.disabled = true; btn.textContent = 'Submitting…';
+
+      const loc = currentLocation || LOCATIONS[0];
+      const res = await API.createFault({
+        title:       document.getElementById('r-title').value.trim(),
+        type:        document.getElementById('r-type').value,
+        severity:    document.getElementById('r-severity').value,
+        description: document.getElementById('r-desc').value.trim(),
+        location: {
+          area:      loc.area,
+          depot:     loc.depot,
+          markerRef: loc.markerRef
+        },
+        arData: { markerType: 'hiro', confidence: 0.95 }
+      });
+
+      btn.disabled = false; btn.textContent = 'Submit Report';
+
+      if (res.success) {
+        closeModal('modal-report');
+        toast('Fault reported successfully', 'success');
+        currentFault = res.data.fault;
+        showFaultPanel(currentFault, loc);
+        document.getElementById('report-form').reset();
+      } else {
+        errEl.textContent = res.message;
+        errEl.style.display = 'block';
+      }
+    }
+
+    async function submitAnnotation() {
+      if (!currentFault) return;
+      const text = document.getElementById('annot-text').value.trim();
+      if (!text) return;
+
+      const btn   = document.getElementById('annot-submit-btn');
+      const errEl = document.getElementById('annot-error');
+      errEl.style.display = 'none';
+      btn.disabled = true; btn.textContent = 'Saving…';
+
+      const res = await API.annotateFault(currentFault._id, text);
+      btn.disabled = false; btn.textContent = 'Save Note';
+
+      if (res.success) {
+        closeModal('modal-annotate');
+        toast('Note added', 'success');
+        document.getElementById('annot-text').value = '';
+        currentFault = res.data.fault;
+        showFaultPanel(currentFault, currentLocation);
+      } else {
+        errEl.textContent = res.message;
+        errEl.style.display = 'block';
+      }
+    }
+
+    // ── Inspection checklist ─────────────────────────────────────
+    function startInspection() {
+      if (!currentFault) return;
+      resetInspect();
+      document.getElementById('inspect-fault-ref').textContent =
+        currentFault.severity.toUpperCase() + ' — ' + truncate(currentFault.title, 20);
+      openModal('modal-inspect');
+      renderStep();
+    }
+
+    function startInspectionNew() {
+      if (!currentLocation) { toast('Select a location first', 'error'); return; }
+      resetInspect();
+      document.getElementById('inspect-fault-ref').textContent = currentLocation.area;
+      openModal('modal-inspect');
+      renderStep();
+    }
+
+    function resetInspect() {
+      inspectStep   = 0;
+      inspectChecks = INSPECTION_STEPS.map(s => new Array(s.items.length).fill(false));
+    }
+
+    function renderStep() {
+      const step = INSPECTION_STEPS[inspectStep];
+      const total = INSPECTION_STEPS.length;
+
+      document.getElementById('inspect-step-label').textContent =
+        `Step ${inspectStep + 1} of ${total}`;
+      document.getElementById('inspect-progress-fill').style.width =
+        `${(inspectStep / total) * 100}%`;
+      document.getElementById('inspect-step-title').textContent = step.title;
+
+      const container = document.getElementById('inspect-items');
+      container.innerHTML = '';
+      step.items.forEach((item, idx) => {
+        const label = document.createElement('label');
+        label.className = 'check-item' + (inspectChecks[inspectStep][idx] ? ' checked' : '');
+
+        const cb = document.createElement('input');
+        cb.type    = 'checkbox';
+        cb.checked = inspectChecks[inspectStep][idx];
+        cb.addEventListener('change', ev => {
+          inspectChecks[inspectStep][idx] = ev.target.checked;
+          label.className = 'check-item' + (ev.target.checked ? ' checked' : '');
+          updateStepButtons();
+        });
+
+        const span = document.createElement('span');
+        span.textContent = item;
+
+        label.appendChild(cb);
+        label.appendChild(span);
+        container.appendChild(label);
+      });
+
+      updateStepButtons();
+    }
+
+    function updateStepButtons() {
+      const allChecked = inspectChecks[inspectStep].every(Boolean);
+      const isFirst    = inspectStep === 0;
+      const isLast     = inspectStep === INSPECTION_STEPS.length - 1;
+
+      document.getElementById('btn-inspect-prev').style.display    = isFirst  ? 'none' : '';
+      document.getElementById('btn-inspect-next').style.display    = isLast   ? 'none' : '';
+      document.getElementById('btn-inspect-confirm').style.display = isLast   ? '' : 'none';
+
+      document.getElementById('btn-inspect-next').disabled    = !allChecked;
+      document.getElementById('btn-inspect-confirm').disabled = !allChecked;
+    }
+
+    function stepNext() {
+      if (inspectStep < INSPECTION_STEPS.length - 1) {
+        inspectStep++;
+        renderStep();
+      }
+    }
+
+    function stepPrev() {
+      if (inspectStep > 0) {
+        inspectStep--;
+        renderStep();
+      }
+    }
+
+    async function inspectConfirm() {
+      const btn = document.getElementById('btn-inspect-confirm');
+      btn.disabled = true; btn.textContent = 'Confirming…';
+
+      if (currentFault) {
+        const res = await API.updateFault(currentFault._id, { status: 'confirmed' });
+        if (res.success) {
+          currentFault = res.data?.fault || currentFault;
+          closeModal('modal-inspect');
+          toast('Inspection complete — fault confirmed', 'success');
+          showFaultPanel(currentFault, currentLocation);
+        } else {
+          toast(res.message, 'error');
+          btn.disabled = false; btn.textContent = 'Confirm Fault ✓';
+        }
+      } else {
+        // No existing fault — open report form
+        closeModal('modal-inspect');
+        openModal('modal-report');
+      }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+    function show(id) { document.getElementById(id).classList.remove('hidden'); }
+    function hide(id) { document.getElementById(id).classList.add('hidden'); }
+    function setLoading(on) {
+      document.getElementById('loading-bar').style.display = on ? 'block' : 'none';
+    }
+    function truncate(str, n) {
+      return str && str.length > n ? str.slice(0, n - 1) + '…' : str;
+    }
+
+    let toastTimer;
+    function toast(msg, type = '') {
+      const el = document.getElementById('toast');
+      el.textContent  = msg;
+      el.className    = 'toast ' + type;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.add('hidden'), 3000);
+    }
+  </script>
+</body>
+</html>

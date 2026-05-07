@@ -16,7 +16,7 @@ router.use(authenticate);
  */
 router.get('/', async (req, res) => {
   try {
-    const { status, severity, type, depot, limit = 50, page = 1 } = req.query;
+    const { status, severity, type, depot, markerRef, limit = 50, page = 1 } = req.query;
 
     // Build filter object
     const filter = {};
@@ -24,6 +24,7 @@ router.get('/', async (req, res) => {
     if (severity) filter.severity = severity;
     if (type) filter.type = type;
     if (depot) filter['location.depot'] = depot;
+    if (markerRef) filter['location.markerRef'] = markerRef;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
