@@ -330,8 +330,12 @@
     arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; sourceWidth: 1280; sourceHeight: 720;"
     style="width: 100%; height: 100%; margin: 0; padding: 0; display: block;">
 
-    <a-marker preset="kanji" id="tool-marker" smooth="true" smoothCount="10">
+    <a-marker type="pattern" url="/ar/pattern-kanji.patt" id="tool-marker" smooth="true" smoothCount="10">
       <a-entity position="0 0.5 0" face-camera scale="1.25 1.25 1.25">
+
+        <!-- White background panel — part of AR overlay, not detectable by camera -->
+        <a-plane color="#ffffff" width="1.80" height="1.05" position="0 0 -0.02"
+          opacity="0.92" material="shader: flat; side: double; transparent: true"></a-plane>
 
         <!-- Green left strip -->
         <a-plane id="ar-strip"
@@ -348,17 +352,17 @@
 
         <!-- Text (right column) -->
         <a-text id="ar-count" value="TOOL CHECK"
-          color="#22c55e" align="left" position="0.08 0.22 0.05"
+          color="#000000" align="left" position="0.08 0.22 0.05"
           width="1.4" font="roboto" negate="false" always-on-top>
         </a-text>
 
         <a-text id="ar-status" value="Point at tool tray"
-          color="#ffffff" align="left" position="0.08 -0.05 0.05"
+          color="#000000" align="left" position="0.08 -0.05 0.05"
           width="1.4" font="roboto" negate="false" always-on-top>
         </a-text>
 
         <a-text id="ar-hint" value="Tap each tool to scan it"
-          color="#e0e6f0" align="left" position="0.08 -0.28 0.05"
+          color="#333333" align="left" position="0.08 -0.28 0.05"
           width="1.3" font="roboto" negate="false" scale="0.82 0.82 0.82" always-on-top>
         </a-text>
 
@@ -568,7 +572,7 @@
           </div>
           <button class="scan-btn ${isDetected ? 'active' : ''}"
                   onclick="toggleTool('${tool.name}')">
-            ${isDetected ? 'Scanned ✓' : 'Scan'}
+            ${isDetected ? 'Verified ✓' : 'Verify'}
           </button>
         `;
 

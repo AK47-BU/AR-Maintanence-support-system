@@ -424,8 +424,12 @@
     style="width: 100%; height: 100%; margin: 0; padding: 0; display: block;">
 
     <!-- Hiro marker — standard AR.js test marker, easy to print -->
-    <a-marker preset="hiro" id="fault-marker" smooth="true" smoothCount="10">
+    <a-marker type="pattern" url="/ar/pattern-hiro.patt" id="fault-marker" smooth="true" smoothCount="10">
       <a-entity id="ar-overlay" position="0 0.5 0" face-camera scale="1.25 1.25 1.25">
+
+        <!-- White background panel — part of AR overlay, not detectable by camera -->
+        <a-plane color="#ffffff" width="1.90" height="1.10" position="0 0 -0.02"
+          opacity="0.92" material="shader: flat; side: double; transparent: true"></a-plane>
 
         <!-- Severity colour strip on left edge -->
         <a-plane id="ar-strip"
@@ -447,10 +451,10 @@
         </a-circle>
 
         <!-- Text (right column) -->
-        <a-text id="ar-sev"   value=""         color="#ffffff" align="left" position="0.08  0.32 0.05" width="1.4" font="roboto" negate="false" always-on-top></a-text>
-        <a-text id="ar-title" value="SCANNING" color="#ffffff" align="left" position="0.08  0.08 0.05" width="1.4" font="roboto" negate="false" always-on-top></a-text>
-        <a-text id="ar-loc"   value="Aim at the Hiro marker" color="#e0e6f0" align="left" position="0.08 -0.18 0.05" width="1.3" font="roboto" negate="false" scale="0.82 0.82 0.82" always-on-top></a-text>
-        <a-text id="ar-status" value=""        color="#94a3b8" align="left" position="0.08 -0.35 0.05" width="1.3" font="roboto" negate="false" scale="0.72 0.72 0.72" always-on-top></a-text>
+        <a-text id="ar-sev"   value=""         color="#000000" align="left" position="0.08  0.32 0.05" width="1.4" font="roboto" negate="false" always-on-top></a-text>
+        <a-text id="ar-title" value="SCANNING" color="#000000" align="left" position="0.08  0.08 0.05" width="1.4" font="roboto" negate="false" always-on-top></a-text>
+        <a-text id="ar-loc"   value="Aim at the Hiro marker" color="#333333" align="left" position="0.08 -0.18 0.05" width="1.3" font="roboto" negate="false" scale="0.82 0.82 0.82" always-on-top></a-text>
+        <a-text id="ar-status" value=""        color="#555555" align="left" position="0.08 -0.35 0.05" width="1.3" font="roboto" negate="false" scale="0.72 0.72 0.72" always-on-top></a-text>
 
         <!-- Canvas corner brackets — flush join, curved outer corners -->
         <a-entity id="ar-frame" hud-frame="color: #0ea5e9; width: 1.90; height: 1.10" position="0 0 0.03"></a-entity>
@@ -871,7 +875,7 @@
 
     // ── AR overlay update ─────────────────────────────────────────
     function updateAROverlay(fault) {
-      const color = SEV_COLOR[fault?.severity] || '#0ea5e9';
+      const color = fault?.status === 'resolved' ? '#22c55e' : (SEV_COLOR[fault?.severity] || '#0ea5e9');
       const strip  = document.getElementById('ar-strip');
       const sev    = document.getElementById('ar-sev');
       const title  = document.getElementById('ar-title');
