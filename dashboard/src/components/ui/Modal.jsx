@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 
-// Simple modal wrapper — renders children as a centered overlay
+// Simple modal wrapper - renders children as a centered overlay
 export function Modal({ title, onClose, children, footer }) {
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>

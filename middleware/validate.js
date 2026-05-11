@@ -19,7 +19,7 @@ const validate = (req, res, next) => {
   next();
 };
 
-// --- Validation chains ---
+// Validation chains
 
 const registerValidation = [
   body('email')

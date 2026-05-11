@@ -16,15 +16,13 @@ const dashboardRoutes = require('./routes/dashboard');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ─────────────────────────────────────────────────────────
 // Security Middleware
-// ─────────────────────────────────────────────────────────
 
-// Helmet — sets various HTTP security headers
+// Helmet - sets various HTTP security headers
 // CSP disabled: A-Frame + AR.js require unsafe-eval for WebGL shader compilation (TRL-3 trade-off)
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 
-// CORS — restrict which origins can access the API
+// CORS - restrict which origins can access the API
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
   .split(',')
   .map(origin => origin.trim());
@@ -50,7 +48,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Rate limiting — prevent brute-force attacks
+// Rate limiting - prevent brute-force attacks
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,  // 15 minutes
   max: 100,                    // limit each IP to 100 requests per window
@@ -80,17 +78,15 @@ app.use(generalLimiter);
 app.use(express.json({ limit: '10mb' }));  // Allows AR screenshots in base64
 app.use(express.urlencoded({ extended: false }));
 
-// AR frontend — served as static files from /ar/
+// AR frontend - served as static files from /ar/
 app.use('/ar', express.static(path.join(__dirname, 'ar')));
 
-// Uploaded fault photos — served as static files from /uploads/
+// Uploaded fault photos - served as static files from /uploads/
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ─────────────────────────────────────────────────────────
 // Routes
-// ─────────────────────────────────────────────────────────
 
-// Health check — no auth required
+// Health check - no auth required
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
@@ -118,9 +114,7 @@ app.get('/api/permissions', (req, res) => {
   res.json({ success: true, data: { permissions: PERMISSIONS } });
 });
 
-// ─────────────────────────────────────────────────────────
 // Error Handling
-// ─────────────────────────────────────────────────────────
 
 // 404 handler
 app.use((req, res) => {
@@ -145,9 +139,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ─────────────────────────────────────────────────────────
 // Start Server
-// ─────────────────────────────────────────────────────────
 
 const startServer = async () => {
   try {

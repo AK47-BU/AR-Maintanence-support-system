@@ -33,7 +33,7 @@ async function request(path, options = {}) {
     });
     const data = await res.json();
     // Only redirect on 401 if the user had an active token (expired session).
-    // A 401 on the login endpoint itself just means wrong credentials — don't redirect.
+    // A 401 on the login endpoint itself just means wrong credentials - don't redirect.
     if (res.status === 401 && Auth.getToken()) { Auth.clear(); window.location.href = '/ar/'; }
     return data;
   } catch (err) {

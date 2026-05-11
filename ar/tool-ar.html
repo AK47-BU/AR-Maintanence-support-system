@@ -281,7 +281,7 @@
     const user = Auth.getUser();
     if (user) document.getElementById('topbar-user').textContent = user.name || user.email;
 
-    // ── Default tool list (used if API inventory is empty) ──────
+    // Default tool list (used if API inventory is empty)
     const DEFAULT_TOOLS = [
       { name: 'Torque Wrench',          category: 'hand_tool'  },
       { name: 'Voltage Tester',          category: 'electrical' },
@@ -293,7 +293,7 @@
       { name: 'Hammer',                   category: 'hand_tool'  },
     ];
 
-    // ── State ────────────────────────────────────────────────────
+    // State
     let expectedTools  = [];   // { name, category, _id? }
     let detectedSet    = new Set();
     let markerActive   = false;
@@ -333,7 +333,7 @@
       });
     }
 
-    // ── Render tool list ─────────────────────────────────────────
+    // Render tool list
     function renderToolList() {
       const list = document.getElementById('tool-list');
       list.innerHTML = '';
@@ -402,7 +402,7 @@
       document.getElementById('ar-hint').setAttribute('value',   markerActive ? 'Tap each tool in the list' : 'Marker lost — keep scanning');
     }
 
-    // ── Submit check ─────────────────────────────────────────────
+    // Submit check handler
     async function submitCheck() {
       const btn = document.getElementById('submit-btn');
       btn.disabled = true; btn.textContent = 'Submitting…';
@@ -469,7 +469,7 @@
       updateAROverlay();
     }
 
-    // ── Helpers ───────────────────────────────────────────────────
+    // Helper functions
     function slugify(str) {
       return str.toLowerCase().replace(/[^a-z0-9]/g, '-');
     }

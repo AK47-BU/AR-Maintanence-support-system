@@ -8,7 +8,7 @@ import { LoadingState, EmptyState } from '../components/ui/LoadingState.jsx'
 import { Modal } from '../components/ui/Modal.jsx'
 import { timeAgo, fullDate } from '../utils/format.js'
 
-// ── Report Fault Modal ────────────────────────────
+// Report Fault Modal
 
 function ReportFaultModal({ onClose, onSaved }) {
   const [form, setForm] = useState({
@@ -112,7 +112,7 @@ function ReportFaultModal({ onClose, onSaved }) {
   )
 }
 
-// ── Fault Detail Modal ────────────────────────────
+// Fault Detail Modal
 
 function FaultDetailModal({ fault: initialFault, onClose, onUpdated }) {
   const { user } = useAuth()
@@ -260,7 +260,7 @@ function FaultDetailModal({ fault: initialFault, onClose, onUpdated }) {
   )
 }
 
-// ── Main Faults Page ──────────────────────────────
+// Main Faults Page
 
 export function FaultsPage() {
   const { user } = useAuth()

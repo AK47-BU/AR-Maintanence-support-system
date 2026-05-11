@@ -8,10 +8,8 @@ import { ToolsPage } from './pages/ToolsPage.jsx'
 import { AuditPage } from './pages/AuditPage.jsx'
 import { SecurityPage } from './pages/SecurityPage.jsx'
 
-// ─────────────────────────────────────────────────
-// Protected route wrapper — redirects to login if
+// Protected route wrapper - redirects to login if
 // the user isn't authenticated.
-// ─────────────────────────────────────────────────
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user } = useAuth()
 
@@ -21,9 +19,7 @@ function ProtectedRoute({ children, adminOnly = false }) {
   return children
 }
 
-// ─────────────────────────────────────────────────
 // The main layout shell shown when logged in
-// ─────────────────────────────────────────────────
 function AppShell() {
   return (
     <div className="app-shell">
@@ -53,9 +49,7 @@ function AppShell() {
   )
 }
 
-// ─────────────────────────────────────────────────
-// Root — handles login vs app routing
-// ─────────────────────────────────────────────────
+// Root - handles login vs app routing
 function RootRouter() {
   const { user } = useAuth()
 

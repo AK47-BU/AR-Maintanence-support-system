@@ -1,9 +1,7 @@
-// ─────────────────────────────────────────────────
 // API Service
 //
 // All fetch calls go through here. The token is
 // stored in memory (not localStorage) for security.
-// ─────────────────────────────────────────────────
 
 let authToken = null
 

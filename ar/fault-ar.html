@@ -224,7 +224,7 @@
     }
     .modal-actions .btn { flex: 1; }
 
-    /* ── Inspection checklist ────────────────── */
+    /* Inspection checklist styles */
     .inspect-header {
       display: flex; align-items: center;
       justify-content: space-between;
@@ -504,10 +504,10 @@
   <div id="toast" class="hidden"></div>
 
   <script>
-    // ── Auth guard ──────────────────────────────────────────────
+    // Auth guard
     if (!Auth.isLoggedIn()) window.location.href = '/ar/';
 
-    // ── Photo preview in report form ────────────────────────────
+    // Photo preview in report form
     document.addEventListener('change', e => {
       if (e.target.id !== 'r-photo') return;
       const file = e.target.files[0];
@@ -521,12 +521,12 @@
       }
     });
 
-    // ── Constants ───────────────────────────────────────────────
+    // Constants
     const LOCATIONS = [
-      { area: 'Platform 1 — Track Side',    markerRef: 'marker-0', depot: 'Central Depot' },
+      { area: 'Platform 1 - Track Side',    markerRef: 'marker-0', depot: 'Central Depot' },
       { area: 'Tunnel Section A',            markerRef: 'marker-1', depot: 'Central Depot' },
-      { area: 'Engine Bay — Bay 3',          markerRef: 'marker-2', depot: 'Central Depot' },
-      { area: 'Bus Exterior — Left Panel',   markerRef: 'marker-3', depot: 'Central Depot' },
+      { area: 'Engine Bay - Bay 3',          markerRef: 'marker-2', depot: 'Central Depot' },
+      { area: 'Bus Exterior - Left Panel',   markerRef: 'marker-3', depot: 'Central Depot' },
       { area: 'Overhead Rail Structure B',   markerRef: 'marker-4', depot: 'Central Depot' },
       { area: 'Station Entrance Concourse',  markerRef: 'marker-5', depot: 'Central Depot' },
     ];
@@ -570,14 +570,14 @@
       }
     ];
 
-    // ── State ────────────────────────────────────────────────────
+    // State
     let markerVisible   = false;
     let currentFault    = null;
     let currentLocation = null;   // LOCATIONS[i]
     let inspectStep     = 0;
     let inspectChecks   = [];     // bool[][] per step
 
-    // ── Init ─────────────────────────────────────────────────────
+    // Init
     const user = Auth.getUser();
     if (user) document.getElementById('topbar-user').textContent = user.name || user.email;
 
@@ -590,11 +590,11 @@
       picker.appendChild(opt);
     });
 
-    // AR marker events
+    // Marker events
     document.querySelector('#fault-marker').addEventListener('markerFound', onMarkerFound);
     document.querySelector('#fault-marker').addEventListener('markerLost',  onMarkerLost);
 
-    // ── Marker events ────────────────────────────────────────────
+    // Marker found handler
     function onMarkerFound() {
       markerVisible = true;
       document.getElementById('scan-hint').style.opacity = '0';
@@ -610,7 +610,7 @@
       document.getElementById('scan-hint').style.opacity = '1';
     }
 
-    // ── Location picker ──────────────────────────────────────────
+    // Location picker handler
     async function onLocationChange() {
       const idx = picker.value;
       if (idx === '') {
@@ -638,7 +638,7 @@
       }
     }
 
-    // ── Panel display ─────────────────────────────────────────────
+    // Panel display functions
     function showFaultPanel(fault, loc) {
       hide('panel-no-fault');
       show('panel-fault');
@@ -747,7 +747,7 @@
 
     }
 
-    // ── Actions ───────────────────────────────────────────────────
+    // Action handlers
     async function resolveFault() {
       if (!currentFault || !confirm('Mark this fault as resolved?')) return;
       const res = await API.updateFault(currentFault._id, { status: 'resolved' });
@@ -835,12 +835,12 @@
       }
     }
 
-    // ── Inspection checklist ─────────────────────────────────────
+    // Inspection checklist functions
     function startInspection() {
       if (!currentFault) return;
       resetInspect();
       document.getElementById('inspect-fault-ref').textContent =
-        currentFault.severity.toUpperCase() + ' — ' + truncate(currentFault.title, 20);
+        currentFault.severity.toUpperCase() + ' - ' + truncate(currentFault.title, 20);
       openModal('modal-inspect');
       renderStep();
     }
@@ -937,13 +937,13 @@
           btn.disabled = false; btn.textContent = 'Confirm Fault ✓';
         }
       } else {
-        // No existing fault — open report form
+        // No existing fault - open report form
         closeModal('modal-inspect');
         openModal('modal-report');
       }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────
+    // Helper functions
     function openModal(id) {
       document.getElementById(id).classList.remove('hidden');
     }

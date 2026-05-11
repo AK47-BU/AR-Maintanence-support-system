@@ -29,7 +29,7 @@ const toolSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Tool check records — logs of AR tool checks
+// Tool check records - logs of AR tool checks
 const toolCheckSchema = new mongoose.Schema({
   // Who performed the check
   performedBy: {

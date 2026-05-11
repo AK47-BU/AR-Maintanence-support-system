@@ -90,7 +90,7 @@ router.patch('/:id', authorise('admin'), async (req, res) => {
   }
 });
 
-// ---- Tool Checks ----
+// Tool Checks
 
 /**
  * POST /api/tools/checks

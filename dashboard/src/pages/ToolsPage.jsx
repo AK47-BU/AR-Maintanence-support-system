@@ -8,14 +8,14 @@ import { LoadingState, EmptyState } from '../components/ui/LoadingState.jsx'
 import { StatCard } from '../components/ui/StatCard.jsx'
 import { timeAgo, fullDate } from '../utils/format.js'
 
-// ── Tool Check Detail Modal ───────────────────────
+// Tool Check Detail Modal
 
 function CheckDetailModal({ check, onClose }) {
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <div className="modal-header">
-          <span className="modal-title">Tool Check — {check.checkType?.replace(/_/g, ' ')}</span>
+          <span className="modal-title">Tool Check - {check.checkType?.replace(/_/g, ' ')}</span>
           <button className="btn btn-ghost" style={{ padding: '4px 8px' }} onClick={onClose}>
             <X size={16} />
           </button>
@@ -87,7 +87,7 @@ function CheckDetailModal({ check, onClose }) {
   )
 }
 
-// ── Main Tools Page ───────────────────────────────
+// Main Tools Page
 
 export function ToolsPage() {
   const { user } = useAuth()
