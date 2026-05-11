@@ -62,38 +62,34 @@
     Keep the marker flat, well-lit, and at least 15 cm wide for reliable detection.
   </div>
 
-  <div class="section-title">Fault Scanner markers — use with fault-ar.html</div>
+  <div class="section-title">AR Markers — one per mode</div>
 
   <div class="marker-grid">
     <div class="marker-card">
-      <div class="marker-img">
-        <!-- Hiro is the standard AR.js test marker — easy to find online -->
-        <img src="https://raw.githack.com/AR-js-org/AR.js/master/data/images/hiro.png"
-             alt="Hiro marker" onerror="this.parentElement.innerHTML='<span style=\'color:#64748b;font-size:12px;padding:8px\'>Load from<br>AR.js repo</span>'">
+      <div class="marker-img" style="width: 160px; height: 160px;">
+        <img src="/ar/img/hiro.png" alt="Hiro marker">
       </div>
-      <span class="badge badge-fault">Fault</span>
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;">
+        <span class="badge badge-fault">Fault Scanner</span>
+      </div>
       <div class="marker-name">Hiro Marker</div>
-      <div class="marker-loc">All fault locations</div>
+      <div class="marker-loc">fault-ar.html</div>
+    </div>
+    <div class="marker-card">
+      <div class="marker-img" style="width: 160px; height: 160px;">
+        <img src="/ar/img/kanji.png" alt="Kanji marker">
+      </div>
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:8px;">
+        <span class="badge badge-tool">Tool Check</span>
+      </div>
+      <div class="marker-name">Kanji Marker</div>
+      <div class="marker-loc">tool-ar.html</div>
     </div>
   </div>
 
   <div class="tip" style="margin-bottom:24px;">
-    The fault scanner uses a <strong>single Hiro marker</strong>. When detected, you choose the specific
-    location from a dropdown in the app. This lets you demo multiple locations without printing multiple markers.
-  </div>
-
-  <div class="section-title">Tool check marker — use with tool-ar.html</div>
-
-  <div class="marker-grid">
-    <div class="marker-card">
-      <div class="marker-img">
-        <img src="https://raw.githack.com/AR-js-org/AR.js/master/data/images/kanji.png"
-             alt="Kanji marker" onerror="this.parentElement.innerHTML='<span style=\'color:#64748b;font-size:12px;padding:8px\'>Load from<br>AR.js repo</span>'">
-      </div>
-      <span class="badge badge-tool">Tool Check</span>
-      <div class="marker-name">Kanji Marker</div>
-      <div class="marker-loc">Tool tray / equipment bay</div>
-    </div>
+    Each mode uses a <strong>different marker</strong> so both apps can run independently without triggering each other.
+    Use the <strong>Hiro marker</strong> for the Fault Scanner, and the <strong>Kanji marker</strong> for the Tool Check.
   </div>
 
   <div class="tip">

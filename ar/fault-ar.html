@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>AR Fault Scanner</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js"></script>
@@ -10,7 +12,24 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body { overflow: hidden; background: #000; font-family: 'Segoe UI', system-ui, sans-serif; }
+    html { width: 100%; height: 100%; }
+
+    body {
+      overflow: hidden;
+      background: #000;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      width: 100vw;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+
+    a-scene {
+      display: block !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
 
     /* A-Frame fills the screen; UI sits on top */
     #ui {
@@ -281,31 +300,142 @@
 </head>
 <body>
 
+  <!-- face-camera: makes entity's +Z always point toward the camera regardless of marker orientation -->
+  <script>
+    // always-on-top: disables depth test so text renders over everything
+    AFRAME.registerComponent('always-on-top', {
+      init: function () {
+        var el = this.el;
+        function fix() {
+          el.object3D.traverse(function (node) {
+            if (node.material) {
+              node.material.depthTest  = false;
+              node.material.depthWrite = false;
+              node.renderOrder = 999;
+            }
+          });
+        }
+        el.addEventListener('object3dset', fix);
+        fix();
+        [100, 400, 1000, 2000].forEach(function (d) { setTimeout(fix, d); });
+      }
+    });
+
+    AFRAME.registerComponent('face-camera', {
+      init: function () { this._tgt = new THREE.Quaternion(); },
+      tick: function () {
+        var obj    = this.el.object3D;
+        var camera = this.el.sceneEl.camera;
+        if (!camera) return;
+        var camPos = new THREE.Vector3();
+        var myPos  = new THREE.Vector3();
+        camera.getWorldPosition(camPos);
+        obj.getWorldPosition(myPos);
+        var fwd = camPos.clone().sub(myPos);
+        if (fwd.lengthSq() < 0.0001) return;
+        fwd.normalize();
+        var up  = new THREE.Vector3(0, 1, 0);
+        var rgt = new THREE.Vector3().crossVectors(up, fwd).normalize();
+        if (rgt.lengthSq() < 0.0001) rgt.set(1, 0, 0);
+        up.crossVectors(fwd, rgt).normalize();
+        var worldRot = new THREE.Matrix4().makeBasis(rgt, up, fwd);
+        if (obj.parent) {
+          var parentRotInv = new THREE.Matrix4()
+            .extractRotation(obj.parent.matrixWorld).invert();
+          worldRot.premultiply(parentRotInv);
+        }
+        this._tgt.setFromRotationMatrix(worldRot);
+        obj.quaternion.slerp(this._tgt, 0.12);
+      }
+    });
+
+    // hud-frame: draws corner brackets via canvas texture — flush join, curved outer corner
+    AFRAME.registerComponent('hud-frame', {
+      schema: {
+        color:  { type: 'color',  default: '#0ea5e9' },
+        width:  { type: 'number', default: 1.9 },
+        height: { type: 'number', default: 1.1 }
+      },
+      init: function () {
+        var W = 512, H = Math.round(W * this.data.height / this.data.width);
+        this._W = W; this._H = H;
+        this._canvas = document.createElement('canvas');
+        this._canvas.width = W; this._canvas.height = H;
+        this._ctx = this._canvas.getContext('2d');
+        this._tex = new THREE.CanvasTexture(this._canvas);
+        var geo = new THREE.PlaneGeometry(this.data.width, this.data.height);
+        var mat = new THREE.MeshBasicMaterial({
+          map: this._tex, transparent: true, depthWrite: false, side: THREE.DoubleSide
+        });
+        this._mesh = new THREE.Mesh(geo, mat);
+        this.el.object3D.add(this._mesh);
+        this._draw();
+      },
+      update: function () { if (this._ctx) this._draw(); },
+      tick: function (t) {
+        if (this._mesh) this._mesh.material.opacity = 0.86 + 0.14 * Math.sin(t / 413);
+      },
+      _draw: function () {
+        var W = this._W, H = this._H, ctx = this._ctx;
+        ctx.clearRect(0, 0, W, H);
+        var lw  = Math.round(W * 0.036);
+        var arm = Math.round(W * 0.20);
+        var r   = Math.round(W * 0.022);
+        var pad = lw / 2 + 1;
+        ctx.strokeStyle = this.data.color;
+        ctx.lineWidth   = lw;
+        ctx.lineCap     = 'butt';
+        // TL
+        ctx.beginPath();
+        ctx.moveTo(pad, pad + arm); ctx.lineTo(pad, pad + r);
+        ctx.arcTo(pad, pad, pad + r, pad, r); ctx.lineTo(pad + arm, pad);
+        ctx.stroke();
+        // TR
+        ctx.beginPath();
+        ctx.moveTo(W - pad, pad + arm); ctx.lineTo(W - pad, pad + r);
+        ctx.arcTo(W - pad, pad, W - pad - r, pad, r); ctx.lineTo(W - pad - arm, pad);
+        ctx.stroke();
+        // BL
+        ctx.beginPath();
+        ctx.moveTo(pad, H - pad - arm); ctx.lineTo(pad, H - pad - r);
+        ctx.arcTo(pad, H - pad, pad + r, H - pad, r); ctx.lineTo(pad + arm, H - pad);
+        ctx.stroke();
+        // BR
+        ctx.beginPath();
+        ctx.moveTo(W - pad, H - pad - arm); ctx.lineTo(W - pad, H - pad - r);
+        ctx.arcTo(W - pad, H - pad, W - pad - r, H - pad, r); ctx.lineTo(W - pad - arm, H - pad);
+        ctx.stroke();
+        this._tex.needsUpdate = true;
+      },
+      remove: function () {
+        this.el.object3D.remove(this._mesh);
+        this._mesh.geometry.dispose();
+        this._mesh.material.map.dispose();
+        this._mesh.material.dispose();
+      }
+    });
+  </script>
+
   <!-- AR Scene -->
   <a-scene
     vr-mode-ui="enabled: false"
-    renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true;"
-    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+    renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true; precision: highp; alpha: true"
+    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; sourceWidth: 1280; sourceHeight: 720;"
+    style="width: 100%; height: 100%; margin: 0; padding: 0; display: block;">
 
     <!-- Hiro marker — standard AR.js test marker, easy to print -->
     <a-marker preset="hiro" id="fault-marker" smooth="true" smoothCount="10">
-      <a-entity id="ar-overlay" position="0 0.5 0">
-
-        <!-- Dark background panel -->
-        <a-plane id="ar-panel"
-          color="#0a0e1a" width="1.8" height="1.0"
-          opacity="0.92" material="transparent: true; side: double">
-        </a-plane>
+      <a-entity id="ar-overlay" position="0 0.5 0" face-camera scale="1.25 1.25 1.25">
 
         <!-- Severity colour strip on left edge -->
         <a-plane id="ar-strip"
-          color="#0ea5e9" width="0.06" height="1.0"
-          opacity="1" position="-0.87 0 0.01" material="side: double">
+          color="#0ea5e9" width="0.08" height="1.0"
+          opacity="1" position="-0.87 0 0.01" material="side: double; shader: flat">
         </a-plane>
 
         <!-- Fault photo or category icon (left column) -->
         <a-image id="ar-img"
-          src="/ar/img/icon-other.png"
+          src="/ar/img/icon_fault.png"
           width="0.72" height="0.72"
           position="-0.42 0 0.02">
         </a-image>
@@ -313,14 +443,23 @@
         <!-- Animated pulse ring for critical faults -->
         <a-circle id="ar-pulse"
           radius="1.0" color="#ef4444" opacity="0" wireframe="true"
-          position="0 0 -0.01" rotation="-90 0 0">
+          position="0 0 -0.01">
         </a-circle>
 
         <!-- Text (right column) -->
-        <a-text id="ar-sev"   value=""         color="#fff"     align="left" position="0.08  0.32 0.02" width="1.3" font="roboto" negate="false"></a-text>
-        <a-text id="ar-title" value="SCANNING" color="#e0e6f0"  align="left" position="0.08  0.08 0.02" width="1.2" font="roboto" negate="false" scale="0.78 0.78 0.78"></a-text>
-        <a-text id="ar-loc"   value="Aim at the Hiro marker" color="#94a3b8" align="left" position="0.08 -0.18 0.02" width="1.1" font="roboto" negate="false" scale="0.6 0.6 0.6"></a-text>
-        <a-text id="ar-status" value=""        color="#64748b"  align="left" position="0.08 -0.35 0.02" width="1.1" font="roboto" negate="false" scale="0.55 0.55 0.55"></a-text>
+        <a-text id="ar-sev"   value=""         color="#ffffff" align="left" position="0.08  0.32 0.05" width="1.4" font="roboto" negate="false" always-on-top></a-text>
+        <a-text id="ar-title" value="SCANNING" color="#ffffff" align="left" position="0.08  0.08 0.05" width="1.4" font="roboto" negate="false" always-on-top></a-text>
+        <a-text id="ar-loc"   value="Aim at the Hiro marker" color="#e0e6f0" align="left" position="0.08 -0.18 0.05" width="1.3" font="roboto" negate="false" scale="0.82 0.82 0.82" always-on-top></a-text>
+        <a-text id="ar-status" value=""        color="#94a3b8" align="left" position="0.08 -0.35 0.05" width="1.3" font="roboto" negate="false" scale="0.72 0.72 0.72" always-on-top></a-text>
+
+        <!-- Canvas corner brackets — flush join, curved outer corners -->
+        <a-entity id="ar-frame" hud-frame="color: #0ea5e9; width: 1.90; height: 1.10" position="0 0 0.03"></a-entity>
+
+        <!-- Scan line -->
+        <a-plane id="ar-scan" color="#0ea5e9" width="1.90" height="0.032" opacity="0.5"
+          position="0 -0.55 0.025" material="shader: flat; side: double"
+          animation="property: position; from: 0 -0.55 0.025; to: 0 0.55 0.025; dir: alternate; loop: true; dur: 3200; easing: easeInOutSine">
+        </a-plane>
 
       </a-entity>
     </a-marker>
@@ -504,8 +643,39 @@
   <div id="toast" class="hidden"></div>
 
   <script>
-    // Auth guard
-    if (!Auth.isLoggedIn()) window.location.href = '/ar/';
+    // AR.js sets inline styles on the video after async init.
+    // style.setProperty(..., 'important') creates inline !important — beats JS-set inline styles.
+    // Only touch the video, not the canvas — AR.js must manage the WebGL canvas itself.
+    function fixVideo() {
+      document.querySelectorAll('video').forEach(function(v) {
+        v.style.setProperty('position',   'fixed',  'important');
+        v.style.setProperty('top',        '0',       'important');
+        v.style.setProperty('left',       '0',       'important');
+        v.style.setProperty('width',      '100vw',   'important');
+        v.style.setProperty('height',     '100vh',   'important');
+        v.style.setProperty('object-fit', 'cover',   'important');
+        v.style.setProperty('max-width',  'none',    'important');
+        v.style.setProperty('max-height', 'none',    'important');
+      });
+    }
+    // Run at key points during AR.js's async initialisation (no MutationObserver —
+    // watching the subtree fires on every A-Frame render and kills detection).
+    [0, 500, 1500, 3000].forEach(function(d) { setTimeout(fixVideo, d); });
+
+    // ── Auth guard ── (delayed to allow localStorage to load)
+    function checkAuth() {
+      const token = localStorage.getItem('ar_token');
+      if (!token && !window.location.pathname.includes('/ar/')) {
+        console.warn('No auth token found, redirecting to login');
+        window.location.href = '/ar/';
+      }
+    }
+    // Delay auth check to allow localStorage to populate
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => setTimeout(checkAuth, 100));
+    } else {
+      setTimeout(checkAuth, 100);
+    }
 
     // Photo preview in report form
     document.addEventListener('change', e => {
@@ -711,6 +881,8 @@
       const img    = document.getElementById('ar-img');
 
       strip.setAttribute('color', color);
+      document.getElementById('ar-frame').setAttribute('hud-frame', 'color', color);
+      document.getElementById('ar-scan').setAttribute('color', color);
       sev.setAttribute('value',    fault ? fault.severity.toUpperCase() : '');
       title.setAttribute('value',  fault ? truncate(fault.title, 28) : 'SCANNING');
       loc.setAttribute('value',    fault?.location?.area ? truncate(fault.location.area, 34) : 'Aim at the Hiro marker');
@@ -720,10 +892,10 @@
       if (fault) {
         const photoUrl = fault.photos && fault.photos.length > 0
           ? fault.photos[fault.photos.length - 1].url
-          : '/ar/img/icon-fault.png';
+          : '/ar/img/icon_fault.png';
         img.setAttribute('src', photoUrl);
       } else {
-        img.setAttribute('src', '/ar/img/icon-none.png');
+        img.setAttribute('src', '/ar/img/icon_none.png');
       }
 
       if (fault?.severity === 'critical') {
@@ -738,13 +910,14 @@
 
     function resetAROverlay() {
       document.getElementById('ar-strip').setAttribute('color', '#0ea5e9');
+      document.getElementById('ar-frame').setAttribute('hud-frame', 'color', '#0ea5e9');
+      document.getElementById('ar-scan').setAttribute('color', '#0ea5e9');
       document.getElementById('ar-sev').setAttribute('value', '');
       document.getElementById('ar-title').setAttribute('value', 'SCANNING');
       document.getElementById('ar-loc').setAttribute('value', 'Aim at the Hiro marker');
       document.getElementById('ar-status').setAttribute('value', '');
       document.getElementById('ar-pulse').setAttribute('opacity', '0');
-      document.getElementById('ar-img').setAttribute('src', '/ar/img/icon-none.png');
-
+      document.getElementById('ar-img').setAttribute('src', '/ar/img/icon_none.png');
     }
 
     // Action handlers
