@@ -64,7 +64,7 @@ AR requires HTTPS on mobile. Use ngrok to expose your local server:
 ngrok http 3000
 ```
 
-This outputs an HTTPS URL like `https://xxxx.ngrok-free.dev`. Open that on your phone browser to access the AR interface at `/ar/`.
+This outputs an HTTPS URL like `https://xxxx.ngrok-free.dev`. Open that on your phone browser to access the AR interface at `https://xxxx.ngrok-free.dev/ar/`.
 
 ---
 
