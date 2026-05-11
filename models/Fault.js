@@ -67,6 +67,13 @@ const faultSchema = new mongoose.Schema({
     screenshot: String        // Base64 or URL of AR screenshot
   },
 
+  // Photos attached by engineers (uploaded via AR or web)
+  photos: [{
+    url:        { type: String, required: true },
+    uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    uploadedAt: { type: Date, default: Date.now }
+  }],
+
   // Annotations added by engineers
   annotations: [{
     text: { type: String, required: true },

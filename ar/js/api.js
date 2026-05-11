@@ -49,5 +49,13 @@ const API = {
   updateFault:     (id, data)        => request('/faults/' + id,         { method: 'PATCH', body: JSON.stringify(data) }),
   annotateFault:   (id, text)        => request('/faults/' + id + '/annotate', { method: 'POST', body: JSON.stringify({ text }) }),
   getTools:        (params = {})     => request('/tools?' + new URLSearchParams(params)),
-  submitToolCheck: (data)            => request('/tools/checks',         { method: 'POST',  body: JSON.stringify(data) })
+  submitToolCheck: (data)            => request('/tools/checks',         { method: 'POST',  body: JSON.stringify(data) }),
+  uploadFaultPhoto: (id, formData)   => {
+    const token = Auth.getToken();
+    return fetch(`${API_BASE}/faults/${id}/photo`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData
+    }).then(r => r.json()).catch(() => ({ success: false, message: 'Upload failed.' }));
+  }
 };

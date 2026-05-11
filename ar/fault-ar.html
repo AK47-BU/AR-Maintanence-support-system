@@ -291,21 +291,36 @@
     <a-marker preset="hiro" id="fault-marker" smooth="true" smoothCount="10">
       <a-entity id="ar-overlay" position="0 0.5 0">
 
-        <!-- Background panel (colour = severity) -->
+        <!-- Dark background panel -->
         <a-plane id="ar-panel"
-          color="#0ea5e9" width="1.7" height="0.95"
-          opacity="0.88" material="transparent: true; side: double">
+          color="#0a0e1a" width="1.8" height="1.0"
+          opacity="0.92" material="transparent: true; side: double">
         </a-plane>
+
+        <!-- Severity colour strip on left edge -->
+        <a-plane id="ar-strip"
+          color="#0ea5e9" width="0.06" height="1.0"
+          opacity="1" position="-0.87 0 0.01" material="side: double">
+        </a-plane>
+
+        <!-- Fault photo or category icon (left column) -->
+        <a-image id="ar-img"
+          src="/ar/img/icon-other.png"
+          width="0.72" height="0.72"
+          position="-0.42 0 0.02">
+        </a-image>
 
         <!-- Animated pulse ring for critical faults -->
         <a-circle id="ar-pulse"
-          radius="0.95" color="#ef4444" opacity="0" wireframe="true"
+          radius="1.0" color="#ef4444" opacity="0" wireframe="true"
           position="0 0 -0.01" rotation="-90 0 0">
         </a-circle>
 
-        <a-text id="ar-sev"   value=""          color="#fff" align="center" position="0  0.30 0.01" width="1.6" font="roboto" negate="false"></a-text>
-        <a-text id="ar-title" value="SCANNING"  color="#e0e6f0" align="center" position="0  0.05 0.01" width="1.55" font="roboto" negate="false" scale="0.85 0.85 0.85"></a-text>
-        <a-text id="ar-loc"   value="Aim at the Hiro marker" color="#94a3b8" align="center" position="0 -0.25 0.01" width="1.45" font="roboto" negate="false" scale="0.65 0.65 0.65"></a-text>
+        <!-- Text (right column) -->
+        <a-text id="ar-sev"   value=""         color="#fff"     align="left" position="0.08  0.32 0.02" width="1.3" font="roboto" negate="false"></a-text>
+        <a-text id="ar-title" value="SCANNING" color="#e0e6f0"  align="left" position="0.08  0.08 0.02" width="1.2" font="roboto" negate="false" scale="0.78 0.78 0.78"></a-text>
+        <a-text id="ar-loc"   value="Aim at the Hiro marker" color="#94a3b8" align="left" position="0.08 -0.18 0.02" width="1.1" font="roboto" negate="false" scale="0.6 0.6 0.6"></a-text>
+        <a-text id="ar-status" value=""        color="#64748b"  align="left" position="0.08 -0.35 0.02" width="1.1" font="roboto" negate="false" scale="0.55 0.55 0.55"></a-text>
 
       </a-entity>
     </a-marker>
@@ -424,6 +439,13 @@
         <textarea id="r-desc" class="field-input" rows="3"
                   placeholder="Describe what you can see…"></textarea>
 
+        <label class="field-label" for="r-photo">Photo (optional)</label>
+        <input id="r-photo" type="file" accept="image/jpeg,image/png,image/webp"
+               class="field-input" style="padding:8px;cursor:pointer;">
+        <div id="r-photo-preview" style="margin-top:6px;display:none;">
+          <img id="r-photo-img" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.1);">
+        </div>
+
         <div id="report-error" style="font-size:12px;color:#fca5a5;margin-bottom:10px;display:none"></div>
 
         <div class="modal-actions">
@@ -484,6 +506,20 @@
   <script>
     // ── Auth guard ──────────────────────────────────────────────
     if (!Auth.isLoggedIn()) window.location.href = '/ar/';
+
+    // ── Photo preview in report form ────────────────────────────
+    document.addEventListener('change', e => {
+      if (e.target.id !== 'r-photo') return;
+      const file = e.target.files[0];
+      const preview = document.getElementById('r-photo-preview');
+      const img = document.getElementById('r-photo-img');
+      if (file) {
+        img.src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+      } else {
+        preview.style.display = 'none';
+      }
+    });
 
     // ── Constants ───────────────────────────────────────────────
     const LOCATIONS = [
@@ -662,19 +698,33 @@
       resetAROverlay();
     }
 
+
     // ── AR overlay update ─────────────────────────────────────────
     function updateAROverlay(fault) {
       const color = SEV_COLOR[fault?.severity] || '#0ea5e9';
-      const panel = document.getElementById('ar-panel');
-      const sev   = document.getElementById('ar-sev');
-      const title = document.getElementById('ar-title');
-      const loc   = document.getElementById('ar-loc');
-      const pulse = document.getElementById('ar-pulse');
+      const strip  = document.getElementById('ar-strip');
+      const sev    = document.getElementById('ar-sev');
+      const title  = document.getElementById('ar-title');
+      const loc    = document.getElementById('ar-loc');
+      const status = document.getElementById('ar-status');
+      const pulse  = document.getElementById('ar-pulse');
+      const img    = document.getElementById('ar-img');
 
-      panel.setAttribute('color', color);
-      sev.setAttribute('value',   fault ? fault.severity.toUpperCase() + '  |  ' + fault.status.replace('_',' ') : '');
-      title.setAttribute('value', fault ? truncate(fault.title, 30) : 'SCANNING');
-      loc.setAttribute('value',   fault?.location?.area ? truncate(fault.location.area, 32) : 'Aim at the Hiro marker');
+      strip.setAttribute('color', color);
+      sev.setAttribute('value',    fault ? fault.severity.toUpperCase() : '');
+      title.setAttribute('value',  fault ? truncate(fault.title, 28) : 'SCANNING');
+      loc.setAttribute('value',    fault?.location?.area ? truncate(fault.location.area, 34) : 'Aim at the Hiro marker');
+      status.setAttribute('value', fault ? fault.status.replace(/_/g, ' ').toUpperCase() : '');
+
+      // Show uploaded fault photo if available, otherwise generic fault icon
+      if (fault) {
+        const photoUrl = fault.photos && fault.photos.length > 0
+          ? fault.photos[fault.photos.length - 1].url
+          : '/ar/img/icon-fault.png';
+        img.setAttribute('src', photoUrl);
+      } else {
+        img.setAttribute('src', '/ar/img/icon-none.png');
+      }
 
       if (fault?.severity === 'critical') {
         pulse.setAttribute('opacity', '0.6');
@@ -687,11 +737,14 @@
     }
 
     function resetAROverlay() {
-      document.getElementById('ar-panel').setAttribute('color', '#0ea5e9');
+      document.getElementById('ar-strip').setAttribute('color', '#0ea5e9');
       document.getElementById('ar-sev').setAttribute('value', '');
       document.getElementById('ar-title').setAttribute('value', 'SCANNING');
       document.getElementById('ar-loc').setAttribute('value', 'Aim at the Hiro marker');
+      document.getElementById('ar-status').setAttribute('value', '');
       document.getElementById('ar-pulse').setAttribute('opacity', '0');
+      document.getElementById('ar-img').setAttribute('src', '/ar/img/icon-none.png');
+
     }
 
     // ── Actions ───────────────────────────────────────────────────
@@ -731,11 +784,26 @@
       btn.disabled = false; btn.textContent = 'Submit Report';
 
       if (res.success) {
+        currentFault = res.data.fault;
+
+        // Upload photo if one was selected
+        const photoFile = document.getElementById('r-photo').files[0];
+        if (photoFile && currentFault._id) {
+          const fd = new FormData();
+          fd.append('photo', photoFile);
+          await API.uploadFaultPhoto(currentFault._id, fd);
+          // Reload fault so photos array is populated
+          const updated = await API.getFaults({ markerRef: currentFault.location?.markerRef });
+          if (updated.success && updated.data.faults.length > 0) {
+            currentFault = updated.data.faults.find(f => f._id === currentFault._id) || currentFault;
+          }
+        }
+
         closeModal('modal-report');
         toast('Fault reported successfully', 'success');
-        currentFault = res.data.fault;
         showFaultPanel(currentFault, loc);
         document.getElementById('report-form').reset();
+        document.getElementById('r-photo-preview').style.display = 'none';
       } else {
         errEl.textContent = res.message;
         errEl.style.display = 'block';

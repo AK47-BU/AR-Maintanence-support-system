@@ -4,6 +4,7 @@ const Fault = require('../models/Fault');
 const { authenticate, logAudit } = require('../middleware/auth');
 const { authorise } = require('../middleware/rbac');
 const { faultValidation, annotationValidation } = require('../middleware/validate');
+const upload = require('../middleware/upload');
 
 // All fault routes require authentication
 router.use(authenticate);
@@ -234,6 +235,27 @@ router.post('/:id/annotate', authorise('admin', 'engineer'), annotationValidatio
 
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to add annotation.' });
+  }
+});
+
+/**
+ * POST /api/faults/:id/photo
+ * Upload a photo for a fault. Admins and engineers only.
+ */
+router.post('/:id/photo', authorise('fault:update'), upload.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, message: 'No image file provided.' });
+
+    const fault = await Fault.findById(req.params.id);
+    if (!fault) return res.status(404).json({ success: false, message: 'Fault not found.' });
+
+    const photoUrl = `/uploads/${req.file.filename}`;
+    fault.photos.push({ url: photoUrl, uploadedBy: req.user._id });
+    await fault.save();
+
+    res.json({ success: true, message: 'Photo uploaded.', data: { url: photoUrl } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Photo upload failed.' });
   }
 });
 
