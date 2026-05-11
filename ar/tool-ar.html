@@ -34,7 +34,6 @@
     #ui { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
     #ui > * { pointer-events: auto; }
 
-    /* ── Top bar ── */
     #topbar {
       position: fixed; top: 0; left: 0; right: 0; height: 52px;
       background: rgba(10,14,26,0.88); backdrop-filter: blur(10px);
@@ -48,7 +47,6 @@
       text-decoration: none; color: #e0e6f0; font-size: 16px; flex-shrink: 0;
     }
 
-    /* ── Scan hint ── */
     #scan-hint {
       position: fixed; bottom: 48px; left: 50%; transform: translateX(-50%);
       background: rgba(10,14,26,0.82); border: 1px solid rgba(255,255,255,0.08);
@@ -56,12 +54,10 @@
       pointer-events: none; white-space: nowrap;
     }
 
-    /* ── Loading bar ── */
     #loading-bar { position: fixed; top: 52px; left: 0; right: 0; height: 2px; background: rgba(34,197,94,0.15); display: none; }
     #loading-fill { height: 100%; background: #22c55e; animation: slide 1s infinite; }
     @keyframes slide { 0%{width:0;margin-left:0} 50%{width:60%;margin-left:20%} 100%{width:0;margin-left:100%} }
 
-    /* ── Tool panel ── */
     #tool-panel {
       position: fixed; bottom: 0; left: 0; right: 0;
       background: rgba(10,14,26,0.96); backdrop-filter: blur(14px);
@@ -78,7 +74,6 @@
       border-radius: 3px; margin: 12px auto 0;
       cursor: pointer; touch-action: none;
     }
-
 
     .panel-header {
       display: flex; align-items: center; justify-content: space-between;
@@ -159,7 +154,6 @@
     .btn-submit:active { transform: scale(0.98); }
     .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* ── Result modal ── */
     .modal {
       position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(6px);
       display: flex; align-items: flex-end; justify-content: center;
@@ -193,7 +187,6 @@
     .btn-primary { background: #22c55e; color: #0a0e1a; }
     .btn-ghost   { background: rgba(255,255,255,0.07); color: #94a3b8; border: 1px solid rgba(255,255,255,0.08); }
 
-    /* ── Toast ── */
     #toast {
       position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
       background: #1e2a3a; color: #e0e6f0; border: 1px solid rgba(255,255,255,0.08);
@@ -207,9 +200,7 @@
 </head>
 <body>
 
-  <!-- face-camera: makes entity's +Z always point toward the camera regardless of marker orientation -->
   <script>
-    // always-on-top: disables depth test so text renders over everything
     AFRAME.registerComponent('always-on-top', {
       init: function () {
         var el = this.el;
@@ -256,7 +247,6 @@
       }
     });
 
-    // hud-frame: draws corner brackets via canvas texture — flush join, curved outer corner
     AFRAME.registerComponent('hud-frame', {
       schema: {
         color:  { type: 'color',  default: '#22c55e' },
@@ -292,22 +282,18 @@
         ctx.strokeStyle = this.data.color;
         ctx.lineWidth   = lw;
         ctx.lineCap     = 'butt';
-        // TL
         ctx.beginPath();
         ctx.moveTo(pad, pad + arm); ctx.lineTo(pad, pad + r);
         ctx.arcTo(pad, pad, pad + r, pad, r); ctx.lineTo(pad + arm, pad);
         ctx.stroke();
-        // TR
         ctx.beginPath();
         ctx.moveTo(W - pad, pad + arm); ctx.lineTo(W - pad, pad + r);
         ctx.arcTo(W - pad, pad, W - pad - r, pad, r); ctx.lineTo(W - pad - arm, pad);
         ctx.stroke();
-        // BL
         ctx.beginPath();
         ctx.moveTo(pad, H - pad - arm); ctx.lineTo(pad, H - pad - r);
         ctx.arcTo(pad, H - pad, pad + r, H - pad, r); ctx.lineTo(pad + arm, H - pad);
         ctx.stroke();
-        // BR
         ctx.beginPath();
         ctx.moveTo(W - pad, H - pad - arm); ctx.lineTo(W - pad, H - pad - r);
         ctx.arcTo(W - pad, H - pad, W - pad - r, H - pad, r); ctx.lineTo(W - pad - arm, H - pad);
@@ -323,7 +309,6 @@
     });
   </script>
 
-  <!-- AR Scene — uses Kanji marker (different from fault scanner's Hiro marker) -->
   <a-scene
     vr-mode-ui="enabled: false"
     renderer="logarithmicDepthBuffer: true; antialias: true; precision: highp; alpha: true"
@@ -333,24 +318,20 @@
     <a-marker type="pattern" url="/ar/pattern-kanji.patt" id="tool-marker" smooth="true" smoothCount="10">
       <a-entity position="0 0.5 0" face-camera scale="1.25 1.25 1.25">
 
-        <!-- White background panel — part of AR overlay, not detectable by camera -->
         <a-plane color="#ffffff" width="1.80" height="1.05" position="0 0 -0.02"
           opacity="0.92" material="shader: flat; side: double; transparent: true"></a-plane>
 
-        <!-- Green left strip -->
         <a-plane id="ar-strip"
           color="#22c55e" width="0.08" height="0.95"
           opacity="1" position="-0.82 0 0.01" material="side: double; shader: flat">
         </a-plane>
 
-        <!-- Tool icon (left column) -->
         <a-image id="ar-icon"
           src="/ar/img/icon_none.png"
           width="0.65" height="0.65"
           position="-0.38 0 0.02">
         </a-image>
 
-        <!-- Text (right column) -->
         <a-text id="ar-count" value="TOOL CHECK"
           color="#000000" align="left" position="0.08 0.22 0.05"
           width="1.4" font="roboto" negate="false" always-on-top>
@@ -366,10 +347,8 @@
           width="1.3" font="roboto" negate="false" scale="0.82 0.82 0.82" always-on-top>
         </a-text>
 
-        <!-- Canvas corner brackets — flush join, curved outer corners -->
         <a-entity id="ar-frame" hud-frame="color: #22c55e; width: 1.80; height: 1.05" position="0 0 0.03"></a-entity>
 
-        <!-- Scan line -->
         <a-plane id="ar-scan" color="#22c55e" width="1.80" height="0.032" opacity="0.5"
           position="0 -0.525 0.025" material="shader: flat; side: double"
           animation="property: position; from: 0 -0.525 0.025; to: 0 0.525 0.025; dir: alternate; loop: true; dur: 3200; easing: easeInOutSine">
@@ -381,7 +360,6 @@
     <a-entity camera></a-entity>
   </a-scene>
 
-  <!-- UI -->
   <div id="ui">
     <div id="topbar">
       <a href="/ar/" class="topbar-back">←</a>
@@ -393,7 +371,6 @@
 
     <div id="scan-hint">Point camera at the Kanji marker</div>
 
-    <!-- Tool check panel -->
     <div id="tool-panel" class="hidden">
       <div class="panel-drag"></div>
 
@@ -420,7 +397,6 @@
     </div>
   </div>
 
-  <!-- Result modal -->
   <div id="modal-result" class="modal hidden">
     <div class="modal-card">
       <div class="result-icon" id="result-icon">✓</div>
@@ -437,9 +413,6 @@
   <div id="toast" class="hidden"></div>
 
   <script>
-    // AR.js sets inline styles on the video after async init.
-    // style.setProperty(..., 'important') creates inline !important — beats JS-set inline styles.
-    // Only touch the video, not the canvas — AR.js must manage the WebGL canvas itself.
     function fixVideo() {
       document.querySelectorAll('video').forEach(function(v) {
         v.style.setProperty('position',   'fixed',  'important');
@@ -452,19 +425,14 @@
         v.style.setProperty('max-height', 'none',    'important');
       });
     }
-    // Run at key points during AR.js's async initialisation (no MutationObserver —
-    // watching the subtree fires on every A-Frame render and kills detection).
     [0, 500, 1500, 3000].forEach(function(d) { setTimeout(fixVideo, d); });
 
-    // ── Auth guard ── (delayed to allow localStorage to load)
     function checkAuth() {
       const token = localStorage.getItem('ar_token');
       if (!token && !window.location.pathname.includes('/ar/')) {
-        console.warn('No auth token found, redirecting to login');
         window.location.href = '/ar/';
       }
     }
-    // Delay auth check to allow localStorage to populate
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => setTimeout(checkAuth, 100));
     } else {
@@ -474,7 +442,6 @@
     const user = Auth.getUser();
     if (user) document.getElementById('topbar-user').textContent = user.name || user.email;
 
-    // Default tool list (used if API inventory is empty)
     const DEFAULT_TOOLS = [
       { name: 'Torque Wrench',          category: 'hand_tool'  },
       { name: 'Voltage Tester',          category: 'electrical' },
@@ -486,12 +453,10 @@
       { name: 'Hammer',                   category: 'hand_tool'  },
     ];
 
-    // State
-    let expectedTools  = [];   // { name, category, _id? }
-    let detectedSet    = new Set();
-    let markerActive   = false;
+    let expectedTools = [];
+    let detectedSet   = new Set();
+    let markerActive  = false;
 
-    // ── Init ─────────────────────────────────────────────────────
     window.addEventListener('load', async () => {
       await loadTools();
       renderToolList();
@@ -529,7 +494,6 @@
       });
     }
 
-    // ── Swipeable bottom sheet ────────────────────────────────────
     (function() {
       const panel  = document.getElementById('tool-panel');
       const handle = panel.querySelector('.panel-drag');
@@ -542,17 +506,15 @@
       handle.addEventListener('touchend', e => {
         const delta = e.changedTouches[0].clientY - startY;
         if (delta < -20) {
-          panel.classList.remove('peek');   // swipe up → expand
+          panel.classList.remove('peek');
         } else if (delta > 20) {
-          panel.classList.add('peek');      // swipe down → collapse to peek
+          panel.classList.add('peek');
         } else {
-          // tap → toggle
           panel.classList.toggle('peek');
         }
       }, { passive: true });
     })();
 
-    // ── Render tool list ─────────────────────────────────────────
     function renderToolList() {
       const list = document.getElementById('tool-list');
       list.innerHTML = '';
@@ -587,7 +549,6 @@
         detectedSet.delete(name);
       } else {
         detectedSet.add(name);
-        // Brief flash animation for feedback
         const item = document.getElementById('tool-' + slugify(name));
         if (item) {
           item.style.transition = 'background 0.1s';
@@ -604,10 +565,7 @@
       const total    = expectedTools.length;
       const badge    = document.getElementById('count-badge');
       badge.textContent = `${detected} / ${total}`;
-      badge.className   = 'count-badge' + (
-        detected === total ? ' all-done' :
-        detected < total && detected > 0 ? '' : ''
-      );
+      badge.className   = 'count-badge' + (detected === total ? ' all-done' : '');
     }
 
     function updateAROverlay() {
@@ -625,13 +583,12 @@
       document.getElementById('ar-hint').setAttribute('value',   markerActive ? 'Tap each tool in the list' : 'Marker lost — keep scanning');
     }
 
-    // Submit check handler
     async function submitCheck() {
       const btn = document.getElementById('submit-btn');
       btn.disabled = true; btn.textContent = 'Submitting…';
       setLoading(true);
 
-      const detected = expectedTools.filter(t => detectedSet.has(t.name));
+      const detected  = expectedTools.filter(t => detectedSet.has(t.name));
       const checkType = document.getElementById('check-type').value;
 
       const payload = {
@@ -645,7 +602,7 @@
           name: t.name,
           ...(t._id ? { tool: t._id } : {})
         })),
-        notes: `AR tool check — ${detected.length}/${expectedTools.length} tools scanned`
+        notes: `AR tool check — ${detected.length}/${expectedTools.length} tools verified`
       };
 
       const res = await API.submitToolCheck(payload);
@@ -660,8 +617,8 @@
     }
 
     function showResult(check) {
-      const passed   = check.passed;
-      const missing  = check.missingTools || [];
+      const passed  = check.passed;
+      const missing = check.missingTools || [];
 
       document.getElementById('result-icon').textContent  = passed ? '✅' : '❌';
       document.getElementById('result-title').textContent = passed ? 'Check Passed' : 'Check Failed';
@@ -670,13 +627,9 @@
         : `${check.totalMissing} tool(s) missing from the expected inventory.`;
 
       const missingEl = document.getElementById('missing-list');
-      if (missing.length > 0) {
-        missingEl.innerHTML = missing.map(t =>
-          `<div class="missing-item">⚠ ${t.name} — not detected</div>`
-        ).join('');
-      } else {
-        missingEl.innerHTML = '';
-      }
+      missingEl.innerHTML = missing.length > 0
+        ? missing.map(t => `<div class="missing-item">⚠ ${t.name} — not detected</div>`).join('')
+        : '';
 
       document.getElementById('modal-result').classList.remove('hidden');
     }
@@ -692,7 +645,6 @@
       updateAROverlay();
     }
 
-    // Helper functions
     function slugify(str) {
       return str.toLowerCase().replace(/[^a-z0-9]/g, '-');
     }

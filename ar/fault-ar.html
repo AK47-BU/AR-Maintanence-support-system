@@ -31,7 +31,6 @@
       height: 100% !important;
     }
 
-    /* A-Frame fills the screen; UI sits on top */
     #ui {
       position: fixed; inset: 0;
       pointer-events: none;
@@ -39,7 +38,6 @@
     }
     #ui > * { pointer-events: auto; }
 
-    /* ── Top bar ──────────────────────────────── */
     #topbar {
       position: fixed; top: 0; left: 0; right: 0; height: 52px;
       background: rgba(10, 14, 26, 0.88);
@@ -65,7 +63,6 @@
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
 
-    /* ── Scan hint ───────────────────────────── */
     #scan-hint {
       position: fixed;
       bottom: 48px; left: 50%; transform: translateX(-50%);
@@ -77,7 +74,6 @@
       transition: opacity 0.3s;
     }
 
-    /* ── Scanning spinner ────────────────────── */
     #loading-bar {
       position: fixed; top: 52px; left: 0; right: 0; height: 2px;
       background: rgba(0,212,255,0.15);
@@ -94,7 +90,6 @@
       100% { width: 0; margin-left: 100%; }
     }
 
-    /* ── Bottom panels ───────────────────────── */
     .bottom-panel {
       position: fixed; bottom: 0; left: 0; right: 0;
       background: rgba(10,14,26,0.96);
@@ -116,7 +111,6 @@
       margin: 10px auto 4px;
     }
 
-    /* Severity stripe at top of panel */
     .sev-stripe {
       height: 3px; border-radius: 0;
       margin: 0 0 14px;
@@ -133,7 +127,6 @@
       display: grid; grid-template-columns: 1fr 1fr;
       gap: 8px; margin-bottom: 14px;
     }
-    .meta-item { }
     .meta-label {
       font-size: 10px; font-weight: 700;
       color: #475569; text-transform: uppercase; letter-spacing: 0.06em;
@@ -181,7 +174,6 @@
     .btn-danger   { background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    /* Location selector (no-fault state) */
     .loc-picker {
       background: #0a0e1a;
       border: 1px solid rgba(255,255,255,0.10);
@@ -197,7 +189,6 @@
       margin-bottom: 14px;
     }
 
-    /* ── Modals ──────────────────────────────── */
     .modal {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.72);
@@ -243,7 +234,6 @@
     }
     .modal-actions .btn { flex: 1; }
 
-    /* Inspection checklist styles */
     .inspect-header {
       display: flex; align-items: center;
       justify-content: space-between;
@@ -282,7 +272,6 @@
     .check-item span { font-size: 13px; color: #cbd5e1; line-height: 1.5; }
     .check-item.checked span { color: #475569; text-decoration: line-through; }
 
-    /* ── Toast ───────────────────────────────── */
     #toast {
       position: fixed; bottom: 90px; left: 50%;
       transform: translateX(-50%);
@@ -300,9 +289,7 @@
 </head>
 <body>
 
-  <!-- face-camera: makes entity's +Z always point toward the camera regardless of marker orientation -->
   <script>
-    // always-on-top: disables depth test so text renders over everything
     AFRAME.registerComponent('always-on-top', {
       init: function () {
         var el = this.el;
@@ -349,7 +336,6 @@
       }
     });
 
-    // hud-frame: draws corner brackets via canvas texture — flush join, curved outer corner
     AFRAME.registerComponent('hud-frame', {
       schema: {
         color:  { type: 'color',  default: '#0ea5e9' },
@@ -385,22 +371,18 @@
         ctx.strokeStyle = this.data.color;
         ctx.lineWidth   = lw;
         ctx.lineCap     = 'butt';
-        // TL
         ctx.beginPath();
         ctx.moveTo(pad, pad + arm); ctx.lineTo(pad, pad + r);
         ctx.arcTo(pad, pad, pad + r, pad, r); ctx.lineTo(pad + arm, pad);
         ctx.stroke();
-        // TR
         ctx.beginPath();
         ctx.moveTo(W - pad, pad + arm); ctx.lineTo(W - pad, pad + r);
         ctx.arcTo(W - pad, pad, W - pad - r, pad, r); ctx.lineTo(W - pad - arm, pad);
         ctx.stroke();
-        // BL
         ctx.beginPath();
         ctx.moveTo(pad, H - pad - arm); ctx.lineTo(pad, H - pad - r);
         ctx.arcTo(pad, H - pad, pad + r, H - pad, r); ctx.lineTo(pad + arm, H - pad);
         ctx.stroke();
-        // BR
         ctx.beginPath();
         ctx.moveTo(W - pad, H - pad - arm); ctx.lineTo(W - pad, H - pad - r);
         ctx.arcTo(W - pad, H - pad, W - pad - r, H - pad, r); ctx.lineTo(W - pad - arm, H - pad);
@@ -416,50 +398,41 @@
     });
   </script>
 
-  <!-- AR Scene -->
   <a-scene
     vr-mode-ui="enabled: false"
     renderer="logarithmicDepthBuffer: true; antialias: true; colorManagement: true; precision: highp; alpha: true"
     arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; sourceWidth: 1280; sourceHeight: 720;"
     style="width: 100%; height: 100%; margin: 0; padding: 0; display: block;">
 
-    <!-- Hiro marker — standard AR.js test marker, easy to print -->
     <a-marker type="pattern" url="/ar/pattern-hiro.patt" id="fault-marker" smooth="true" smoothCount="10">
       <a-entity id="ar-overlay" position="0 0.5 0" face-camera scale="1.25 1.25 1.25">
 
-        <!-- White background panel — part of AR overlay, not detectable by camera -->
         <a-plane color="#ffffff" width="1.90" height="1.10" position="0 0 -0.02"
           opacity="0.92" material="shader: flat; side: double; transparent: true"></a-plane>
 
-        <!-- Severity colour strip on left edge -->
         <a-plane id="ar-strip"
           color="#0ea5e9" width="0.08" height="1.0"
           opacity="1" position="-0.87 0 0.01" material="side: double; shader: flat">
         </a-plane>
 
-        <!-- Fault photo or category icon (left column) -->
         <a-image id="ar-img"
           src="/ar/img/icon_fault.png"
           width="0.72" height="0.72"
           position="-0.42 0 0.02">
         </a-image>
 
-        <!-- Animated pulse ring for critical faults -->
         <a-circle id="ar-pulse"
           radius="1.0" color="#ef4444" opacity="0" wireframe="true"
           position="0 0 -0.01">
         </a-circle>
 
-        <!-- Text (right column) -->
         <a-text id="ar-sev"   value=""         color="#000000" align="left" position="0.08  0.32 0.05" width="1.4" font="roboto" negate="false" always-on-top></a-text>
         <a-text id="ar-title" value="SCANNING" color="#000000" align="left" position="0.08  0.08 0.05" width="1.4" font="roboto" negate="false" always-on-top></a-text>
         <a-text id="ar-loc"   value="Aim at the Hiro marker" color="#333333" align="left" position="0.08 -0.18 0.05" width="1.3" font="roboto" negate="false" scale="0.82 0.82 0.82" always-on-top></a-text>
         <a-text id="ar-status" value=""        color="#555555" align="left" position="0.08 -0.35 0.05" width="1.3" font="roboto" negate="false" scale="0.72 0.72 0.72" always-on-top></a-text>
 
-        <!-- Canvas corner brackets — flush join, curved outer corners -->
         <a-entity id="ar-frame" hud-frame="color: #0ea5e9; width: 1.90; height: 1.10" position="0 0 0.03"></a-entity>
 
-        <!-- Scan line -->
         <a-plane id="ar-scan" color="#0ea5e9" width="1.90" height="0.032" opacity="0.5"
           position="0 -0.55 0.025" material="shader: flat; side: double"
           animation="property: position; from: 0 -0.55 0.025; to: 0 0.55 0.025; dir: alternate; loop: true; dur: 3200; easing: easeInOutSine">
@@ -471,23 +444,18 @@
     <a-entity camera></a-entity>
   </a-scene>
 
-  <!-- UI Layer -->
   <div id="ui">
 
-    <!-- Top bar -->
     <div id="topbar">
       <a href="/ar/" class="topbar-back">←</a>
       <span class="topbar-title">AR Fault Scanner</span>
       <span class="topbar-user" id="topbar-user"></span>
     </div>
 
-    <!-- Loading bar -->
     <div id="loading-bar"><div id="loading-fill"></div></div>
 
-    <!-- Scan hint -->
     <div id="scan-hint">Point camera at the Hiro marker</div>
 
-    <!-- ── Fault found panel ── -->
     <div id="panel-fault" class="bottom-panel hidden">
       <div class="panel-drag"></div>
       <div id="fault-sev-stripe" class="sev-stripe"></div>
@@ -529,7 +497,6 @@
       </div>
     </div>
 
-    <!-- ── No fault panel ── -->
     <div id="panel-no-fault" class="bottom-panel hidden">
       <div class="panel-drag"></div>
       <div class="panel-body">
@@ -548,9 +515,8 @@
       </div>
     </div>
 
-  </div><!-- /#ui -->
+  </div>
 
-  <!-- ── Modal: Report Fault ───────────────────────── -->
   <div id="modal-report" class="modal hidden">
     <div class="modal-card">
       <div class="modal-title">Report New Fault</div>
@@ -599,7 +565,6 @@
     </div>
   </div>
 
-  <!-- ── Modal: Annotate ───────────────────────────── -->
   <div id="modal-annotate" class="modal hidden">
     <div class="modal-card">
       <div class="modal-title">Add Note</div>
@@ -617,7 +582,6 @@
     </div>
   </div>
 
-  <!-- ── Modal: Inspection Checklist ──────────────── -->
   <div id="modal-inspect" class="modal hidden">
     <div class="modal-card">
 
@@ -643,13 +607,9 @@
     </div>
   </div>
 
-  <!-- Toast -->
   <div id="toast" class="hidden"></div>
 
   <script>
-    // AR.js sets inline styles on the video after async init.
-    // style.setProperty(..., 'important') creates inline !important — beats JS-set inline styles.
-    // Only touch the video, not the canvas — AR.js must manage the WebGL canvas itself.
     function fixVideo() {
       document.querySelectorAll('video').forEach(function(v) {
         v.style.setProperty('position',   'fixed',  'important');
@@ -662,26 +622,20 @@
         v.style.setProperty('max-height', 'none',    'important');
       });
     }
-    // Run at key points during AR.js's async initialisation (no MutationObserver —
-    // watching the subtree fires on every A-Frame render and kills detection).
     [0, 500, 1500, 3000].forEach(function(d) { setTimeout(fixVideo, d); });
 
-    // ── Auth guard ── (delayed to allow localStorage to load)
     function checkAuth() {
       const token = localStorage.getItem('ar_token');
       if (!token && !window.location.pathname.includes('/ar/')) {
-        console.warn('No auth token found, redirecting to login');
         window.location.href = '/ar/';
       }
     }
-    // Delay auth check to allow localStorage to populate
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => setTimeout(checkAuth, 100));
     } else {
       setTimeout(checkAuth, 100);
     }
 
-    // Photo preview in report form
     document.addEventListener('change', e => {
       if (e.target.id !== 'r-photo') return;
       const file = e.target.files[0];
@@ -695,7 +649,6 @@
       }
     });
 
-    // Constants
     const LOCATIONS = [
       { area: 'Platform 1 - Track Side',    markerRef: 'marker-0', depot: 'Central Depot' },
       { area: 'Tunnel Section A',            markerRef: 'marker-1', depot: 'Central Depot' },
@@ -744,18 +697,15 @@
       }
     ];
 
-    // State
     let markerVisible   = false;
     let currentFault    = null;
-    let currentLocation = null;   // LOCATIONS[i]
+    let currentLocation = null;
     let inspectStep     = 0;
-    let inspectChecks   = [];     // bool[][] per step
+    let inspectChecks   = [];
 
-    // Init
     const user = Auth.getUser();
     if (user) document.getElementById('topbar-user').textContent = user.name || user.email;
 
-    // Populate location picker
     const picker = document.getElementById('location-picker');
     LOCATIONS.forEach((loc, i) => {
       const opt = document.createElement('option');
@@ -764,16 +714,12 @@
       picker.appendChild(opt);
     });
 
-    // Marker events
     document.querySelector('#fault-marker').addEventListener('markerFound', onMarkerFound);
     document.querySelector('#fault-marker').addEventListener('markerLost',  onMarkerLost);
 
-    // Marker found handler
     function onMarkerFound() {
       markerVisible = true;
       document.getElementById('scan-hint').style.opacity = '0';
-
-      // Default to first location on first detection
       if (!currentLocation) {
         showNoFaultPanel();
       }
@@ -784,7 +730,6 @@
       document.getElementById('scan-hint').style.opacity = '1';
     }
 
-    // Location picker handler
     async function onLocationChange() {
       const idx = picker.value;
       if (idx === '') {
@@ -812,7 +757,6 @@
       }
     }
 
-    // Panel display functions
     function showFaultPanel(fault, loc) {
       hide('panel-no-fault');
       show('panel-fault');
@@ -820,10 +764,8 @@
       const sev = fault.severity || 'low';
       const color = SEV_COLOR[sev] || '#3b82f6';
 
-      // Severity stripe
       document.getElementById('fault-sev-stripe').style.background = color;
 
-      // Badge
       const badge = document.getElementById('fault-sev-badge');
       badge.textContent = sev.toUpperCase();
       badge.className = `sev-badge sev-${sev}`;
@@ -837,7 +779,6 @@
         ? new Date(fault.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
         : '—';
 
-      // Annotations
       const annBox = document.getElementById('fault-annotations');
       if (fault.annotations?.length > 0) {
         annBox.style.display = 'block';
@@ -849,13 +790,11 @@
         annBox.style.display = 'none';
       }
 
-      // Show/hide action buttons based on role & status
       const canWrite = Auth.canWrite();
       document.getElementById('btn-inspect').style.display  = (canWrite && fault.status === 'detected') ? '' : 'none';
       document.getElementById('btn-annotate').style.display = canWrite ? '' : 'none';
       document.getElementById('btn-resolve').style.display  = (canWrite && fault.status !== 'resolved') ? '' : 'none';
 
-      // Update AR 3D overlay
       updateAROverlay(fault);
     }
 
@@ -863,7 +802,6 @@
       hide('panel-fault');
       show('panel-no-fault');
       if (loc) {
-        // Pre-select picker value matching loc
         const idx = LOCATIONS.findIndex(l => l.markerRef === loc.markerRef);
         if (idx >= 0) picker.value = idx;
         document.getElementById('no-fault-actions').style.display = 'flex';
@@ -872,8 +810,6 @@
       resetAROverlay();
     }
 
-
-    // ── AR overlay update ─────────────────────────────────────────
     function updateAROverlay(fault) {
       const color = fault?.status === 'resolved' ? '#22c55e' : (SEV_COLOR[fault?.severity] || '#0ea5e9');
       const strip  = document.getElementById('ar-strip');
@@ -892,7 +828,6 @@
       loc.setAttribute('value',    fault?.location?.area ? truncate(fault.location.area, 34) : 'Aim at the Hiro marker');
       status.setAttribute('value', fault ? fault.status.replace(/_/g, ' ').toUpperCase() : '');
 
-      // Show uploaded fault photo if available, otherwise generic fault icon
       if (fault) {
         const photoUrl = fault.photos && fault.photos.length > 0
           ? fault.photos[fault.photos.length - 1].url
@@ -924,7 +859,6 @@
       document.getElementById('ar-img').setAttribute('src', '/ar/img/icon_none.png');
     }
 
-    // Action handlers
     async function resolveFault() {
       if (!currentFault || !confirm('Mark this fault as resolved?')) return;
       const res = await API.updateFault(currentFault._id, { status: 'resolved' });
@@ -963,13 +897,11 @@
       if (res.success) {
         currentFault = res.data.fault;
 
-        // Upload photo if one was selected
         const photoFile = document.getElementById('r-photo').files[0];
         if (photoFile && currentFault._id) {
           const fd = new FormData();
           fd.append('photo', photoFile);
           await API.uploadFaultPhoto(currentFault._id, fd);
-          // Reload fault so photos array is populated
           const updated = await API.getFaults({ markerRef: currentFault.location?.markerRef });
           if (updated.success && updated.data.faults.length > 0) {
             currentFault = updated.data.faults.find(f => f._id === currentFault._id) || currentFault;
@@ -1012,7 +944,6 @@
       }
     }
 
-    // Inspection checklist functions
     function startInspection() {
       if (!currentFault) return;
       resetInspect();
@@ -1036,13 +967,11 @@
     }
 
     function renderStep() {
-      const step = INSPECTION_STEPS[inspectStep];
+      const step  = INSPECTION_STEPS[inspectStep];
       const total = INSPECTION_STEPS.length;
 
-      document.getElementById('inspect-step-label').textContent =
-        `Step ${inspectStep + 1} of ${total}`;
-      document.getElementById('inspect-progress-fill').style.width =
-        `${(inspectStep / total) * 100}%`;
+      document.getElementById('inspect-step-label').textContent = `Step ${inspectStep + 1} of ${total}`;
+      document.getElementById('inspect-progress-fill').style.width = `${(inspectStep / total) * 100}%`;
       document.getElementById('inspect-step-title').textContent = step.title;
 
       const container = document.getElementById('inspect-items');
@@ -1076,9 +1005,9 @@
       const isFirst    = inspectStep === 0;
       const isLast     = inspectStep === INSPECTION_STEPS.length - 1;
 
-      document.getElementById('btn-inspect-prev').style.display    = isFirst  ? 'none' : '';
-      document.getElementById('btn-inspect-next').style.display    = isLast   ? 'none' : '';
-      document.getElementById('btn-inspect-confirm').style.display = isLast   ? '' : 'none';
+      document.getElementById('btn-inspect-prev').style.display    = isFirst ? 'none' : '';
+      document.getElementById('btn-inspect-next').style.display    = isLast  ? 'none' : '';
+      document.getElementById('btn-inspect-confirm').style.display = isLast  ? '' : 'none';
 
       document.getElementById('btn-inspect-next').disabled    = !allChecked;
       document.getElementById('btn-inspect-confirm').disabled = !allChecked;
@@ -1114,19 +1043,13 @@
           btn.disabled = false; btn.textContent = 'Confirm Fault ✓';
         }
       } else {
-        // No existing fault - open report form
         closeModal('modal-inspect');
         openModal('modal-report');
       }
     }
 
-    // Helper functions
-    function openModal(id) {
-      document.getElementById(id).classList.remove('hidden');
-    }
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
-    }
+    function openModal(id)  { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     function show(id) { document.getElementById(id).classList.remove('hidden'); }
     function hide(id) { document.getElementById(id).classList.add('hidden'); }
     function setLoading(on) {
